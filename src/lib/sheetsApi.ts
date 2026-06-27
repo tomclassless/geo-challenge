@@ -26,3 +26,16 @@ export async function pushResults(rows: AnswerResult[]): Promise<void> {
   })
   if (!res.ok) throw new Error('上傳成績失敗 (' + res.status + ')')
 }
+
+/** Overwrite the cloud Players (roster) list so every device shares it. */
+export async function pushRoster(players: string[]): Promise<void> {
+  const url = getApiUrl()
+  if (!url) throw new Error('尚未設定後端網址')
+  const res = await fetch(url, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ players })
+  })
+  if (!res.ok) throw new Error('更新雲端名單失敗 (' + res.status + ')')
+}

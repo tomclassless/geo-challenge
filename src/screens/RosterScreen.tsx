@@ -1,18 +1,34 @@
 import { useState } from 'react'
-import { ChevronLeft, Save, Users } from 'lucide-react'
+import { ChevronLeft, Save, Users, CloudUpload } from 'lucide-react'
 import { useGame } from '../state/gameStore'
 import { Button, Badge } from '../ds'
 
-/** 參與者名單輸入頁 — teacher types one name per line; saved locally. */
+/** 參與者名單輸入頁 — teacher types one name per line; saved locally and
+ *  optionally written back to the cloud so every device shares it. */
 export function RosterScreen() {
-  const { roster, players, setRoster, goTeacher } = useGame()
+  const { roster, players, online, setRoster, saveRosterCloud, goTeacher } = useGame()
   const [text, setText] = useState(roster.join('\n'))
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
 
   const names = text.split('\n').map((n) => n.trim()).filter(Boolean)
 
   const save = async () => {
     await setRoster(names)
     goTeacher()
+  }
+
+  const saveCloud = async () => {
+    setBusy(true)
+    setMessage('')
+    const res = await saveRosterCloud(names)
+    setBusy(false)
+    if (res.ok) {
+      setMessage('已更新雲端名單 ✓ 其他裝置同步後即可看到')
+      setTimeout(goTeacher, 900)
+    } else {
+      setMessage('更新雲端失敗：' + (res.error ?? ''))
+    }
   }
 
   return (
@@ -38,9 +54,12 @@ export function RosterScreen() {
               fontFamily: 'var(--font-sans)', minHeight: 0
             }}
           />
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Button variant="primary" size="lg" iconLeft={<Save size={20} />} onClick={() => void save()} disabled={!names.length}>
-              儲存名單
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Button variant="primary" size="lg" iconLeft={<Save size={20} />} onClick={() => void save()} disabled={!names.length || busy}>
+              儲存名單（這台）
+            </Button>
+            <Button variant="accent" size="lg" iconLeft={<CloudUpload size={20} />} onClick={() => void saveCloud()} disabled={!names.length || busy || !online}>
+              {busy ? '更新中…' : '儲存並更新雲端（所有裝置共用）'}
             </Button>
             {players.length > 0 && (
               <Button variant="ghost" size="lg" iconLeft={<Users size={20} />} onClick={() => setText(players.join('\n'))}>
@@ -48,6 +67,8 @@ export function RosterScreen() {
               </Button>
             )}
           </div>
+          {message && <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{message}</p>}
+          {!online && <p style={{ margin: 0, fontSize: 'var(--fs-xs)', color: 'var(--text-subtle)' }}>（離線中，無法更新雲端；可先存這台）</p>}
         </div>
 
         <div style={{ overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface)', padding: 16 }}>

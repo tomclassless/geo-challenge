@@ -90,14 +90,29 @@ function doGet() {
 }
 
 function doPost(e) {
-  var rows = [];
+  var body = {};
   try {
-    rows = (JSON.parse(e.postData.contents) || {}).results || [];
+    body = JSON.parse(e.postData.contents) || {};
   } catch (err) {
     return json({ ok: false, error: 'bad json' });
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // --- roster update: { players: [...] } overwrites the Players sheet ---
+  if (body.players && Object.prototype.toString.call(body.players) === '[object Array]') {
+    var ps = ss.getSheetByName('Players');
+    if (!ps) ps = ss.insertSheet('Players');
+    ps.clearContents();
+    ps.appendRow(['name']);
+    body.players.forEach(function (n) {
+      if (n !== '' && n != null) ps.appendRow([String(n)]);
+    });
+    return json({ ok: true, players: body.players.length });
+  }
+
+  // --- results upload: { results: [...] } appends to the Results sheet ---
+  var rows = body.results || [];
   var sh = ss.getSheetByName('Results');
   if (!sh) {
     sh = ss.insertSheet('Results');

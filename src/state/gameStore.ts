@@ -4,7 +4,7 @@ import type {
   PlayableQuestion, Question, Region
 } from '../lib/types'
 import { makePlayable, shuffle } from '../lib/shuffle'
-import { fetchBanks, pushResults } from '../lib/sheetsApi'
+import { fetchBanks, pushResults, pushRoster } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
 import { CITIES, findCity, type CityMeta } from '../lib/cities'
 import { adoptApiFromUrl } from '../lib/config'
@@ -66,6 +66,7 @@ interface GameState {
   sync: () => Promise<{ ok: boolean; error?: string }>
   loadSample: () => Promise<void>
   setRoster: (names: string[]) => Promise<void>
+  saveRosterCloud: (names: string[]) => Promise<{ ok: boolean; error?: string }>
 
   startCampaign: (cityIndex?: number) => Promise<void>
   continueCampaign: (id: string) => void
@@ -252,6 +253,20 @@ export const useGame = create<GameState>((set, get) => ({
     const clean = names.map((n) => n.trim()).filter(Boolean)
     await saveRoster(clean)
     set({ roster: clean })
+  },
+
+  saveRosterCloud: async (names) => {
+    const clean = names.map((n) => n.trim()).filter(Boolean)
+    await saveRoster(clean)
+    set({ roster: clean })
+    try {
+      await pushRoster(clean)
+      // reflect the new list as the cloud "players" too
+      set({ players: clean, lastSync: await getLastSync() })
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : '更新雲端名單失敗' }
+    }
   },
 
   startCampaign: async (cityIndex = 0) => {
