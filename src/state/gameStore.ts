@@ -7,6 +7,7 @@ import { makePlayable, shuffle } from '../lib/shuffle'
 import { fetchBanks, pushResults } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
 import { CITIES, findCity, type CityMeta } from '../lib/cities'
+import { adoptApiFromUrl } from '../lib/config'
 import {
   addResults, deleteCampaign, getLastSync, getUnsynced, listCampaigns, loadBanks,
   loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster, takeLegacyCampaign
@@ -172,6 +173,8 @@ export const useGame = create<GameState>((set, get) => ({
   lastResult: null,
 
   init: async () => {
+    // a ?api=... link (e.g. from the QR) configures the backend automatically
+    const adoptedApi = adoptApiFromUrl()
     const banks = await loadBanks()
     let campaigns = await listCampaigns()
     // migrate a pre-multi-save single record, if present
@@ -198,6 +201,9 @@ export const useGame = create<GameState>((set, get) => ({
       online: navigator.onLine,
       phase: 'teacher'
     })
+
+    // freshly configured via ?api= and online → download banks automatically
+    if (adoptedApi && navigator.onLine) void get().sync()
   },
 
   sync: async () => {
