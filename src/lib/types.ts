@@ -53,3 +53,38 @@ export interface AnswerResult {
   chosen: string
   correct: boolean
 }
+
+// ---- RPG campaign save ----
+
+/** Per-player progress within one city. */
+export interface CampaignPlayerState {
+  /** The fixed set of questions this player was dealt for the city (drawn round 1). */
+  questionIds: string[]
+  /** questionId -> already answered correctly (persists across rounds). */
+  correct: Record<string, boolean>
+  /** Whether this player has already taken their turn in the current round. */
+  servedThisRound: boolean
+}
+
+/** Collective progress for one city, shared by the whole class. */
+export interface CampaignCityState {
+  round: number
+  /** Specialties collected so far = total questions answered correctly (cap = roster*5). */
+  collected: number
+  cleared: boolean
+  players: Record<string, CampaignPlayerState>
+}
+
+/** The whole adventure save — one game in progress. */
+export interface CampaignState {
+  roster: string[]
+  /** Index into CITIES (play order). */
+  cityIndex: number
+  cities: Record<string, CampaignCityState>
+  /** Specialties needed to clear a city (default 60). */
+  target: number
+  /** How many questions each soldier carries per turn (default 5). */
+  perTurn: number
+  startedAt: string
+  updatedAt: string
+}

@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
 import { useGame } from './state/gameStore'
 import { HomeScreen } from './screens/HomeScreen'
-import { NameEntryScreen } from './screens/NameEntryScreen'
+import { RosterScreen } from './screens/RosterScreen'
+import { CityIntroScreen } from './screens/CityIntroScreen'
+import { EncounterScreen } from './screens/EncounterScreen'
 import { QuizScreen } from './screens/QuizScreen'
-import { PlayerResultScreen } from './screens/PlayerResultScreen'
+import { TurnResultScreen } from './screens/TurnResultScreen'
+import { RoundEndScreen } from './screens/RoundEndScreen'
+import { CityClearedScreen } from './screens/CityClearedScreen'
+import { GameWonScreen } from './screens/GameWonScreen'
 import { AccuracyReportScreen } from './screens/AccuracyReportScreen'
 import { HistoryScreen } from './screens/HistoryScreen'
 
@@ -19,14 +24,24 @@ export default function App() {
   if (!loaded) return <div className="center">載入中…</div>
 
   switch (phase) {
-    case 'home':
+    case 'teacher':
       return <HomeScreen />
-    case 'name':
-      return <NameEntryScreen />
+    case 'roster':
+      return <RosterScreen />
+    case 'cityIntro':
+      return <CityIntroScreen />
+    case 'encounter':
+      return <EncounterScreen />
     case 'quiz':
       return <QuizScreen />
-    case 'result':
-      return <PlayerResultScreen />
+    case 'turnResult':
+      return <TurnResultScreen />
+    case 'roundEnd':
+      return <RoundEndScreen />
+    case 'cityCleared':
+      return <CityClearedScreen />
+    case 'gameWon':
+      return <GameWonScreen />
     case 'report':
       return <AccuracyReportScreen />
     case 'history':

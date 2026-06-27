@@ -1,97 +1,171 @@
 import { create } from 'zustand'
-import type { AnswerResult, AppConfig, PlayableQuestion, Region } from '../lib/types'
-import { makePlayable } from '../lib/shuffle'
+import type {
+  AnswerResult, AppConfig, CampaignCityState, CampaignState,
+  PlayableQuestion, Question, Region
+} from '../lib/types'
+import { makePlayable, shuffle } from '../lib/shuffle'
 import { fetchBanks, pushResults } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
+import { CITIES, findCity, type CityMeta } from '../lib/cities'
 import {
-  addResults,
-  getAllResults,
-  getLastSync,
-  getUnsynced,
-  loadBanks,
-  markSynced,
-  pendingCount,
-  saveBanks
+  addResults, clearCampaign, getLastSync, getUnsynced, loadBanks, loadCampaign,
+  loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster
 } from '../lib/offlineStore'
 
-export type Phase = 'home' | 'name' | 'quiz' | 'result' | 'report' | 'history'
+export type Phase =
+  | 'teacher' | 'roster' | 'cityIntro' | 'encounter' | 'quiz'
+  | 'turnResult' | 'roundEnd' | 'cityCleared' | 'gameWon'
+  | 'report' | 'history'
 
 export interface PlayerResult {
   player: string
   correct: number
   total: number
-  /** vs this player's previous session in the same region; null if none */
   progressDiff: number | null
 }
+
+/** Result of answering one question, used by the quiz screen for feedback. */
+export interface AnswerOutcome {
+  correct: boolean
+  /** a specialty was knocked loose (first-time correct) */
+  dropped: boolean
+}
+
+const DEFAULT_CONFIG: AppConfig = { teacherPin: '', timerSeconds: 20 }
+const PER_TURN = 5
+const BASE_TARGET = 60
 
 interface GameState {
   loaded: boolean
   regions: Region[]
   players: string[]
+  roster: string[]
   config: AppConfig
   lastSync: string | null
   pending: number
   online: boolean
   syncing: boolean
 
+  campaign: CampaignState | null
   phase: Phase
   region: string | null
   sessionId: string | null
 
-  playable: PlayableQuestion[]
-  index: number
-  answers: AnswerResult[]
+  // active turn
+  currentPlayer: string | null
+  turnQueue: string[]
+  turnQuestions: PlayableQuestion[]
+  turnIndex: number
+  turnCorrect: number
+  paused: boolean
   lastResult: PlayerResult | null
 
   init: () => Promise<void>
   sync: () => Promise<{ ok: boolean; error?: string }>
   loadSample: () => Promise<void>
-  startRound: (region: string) => void
-  restartRound: () => void
-  beginPlayer: (name: string) => void
-  answer: (optionIndex: number | null) => Promise<void>
+  setRoster: (names: string[]) => Promise<void>
+
+  startCampaign: () => Promise<void>
+  continueCampaign: () => void
+  clearSave: () => Promise<void>
+
+  beginRound: () => void
+  nextTurn: () => void
+  attack: () => void
+  answer: (optionIndex: number | null) => Promise<AnswerOutcome>
+  advanceTurn: () => void
+  endTurn: () => void
+  continueAfterTurn: () => void
+  endRound: () => void
+  advanceCity: () => void
+  togglePause: () => void
+
+  goTeacher: () => void
   goHome: () => void
+  goRoster: () => void
   goReport: () => void
   goHistory: () => void
-  backToName: () => void
 }
+
+// ---- helpers ----
 
 function newSessionId(): string {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7)
 }
 
-const DEFAULT_CONFIG: AppConfig = { teacherPin: '', timerSeconds: 30 }
+/** Cities that have a matching question bank, in play order. */
+function getPlayableCities(regions: Region[]): CityMeta[] {
+  return CITIES
+    .filter((c) => regions.some((r) => findCity(r.name)?.region === c.region))
+    .sort((a, b) => a.order - b.order)
+}
+
+function bankRegionFor(regions: Region[], meta: CityMeta): Region | undefined {
+  return regions.find((r) => findCity(r.name)?.region === meta.region)
+}
+
+/** Resolve the city currently being played: its meta + its question bank. */
+function activeCity(
+  regions: Region[],
+  campaign: CampaignState | null
+): { meta: CityMeta; region: Region } | null {
+  if (!campaign) return null
+  const meta = getPlayableCities(regions)[campaign.cityIndex]
+  if (!meta) return null
+  const region = bankRegionFor(regions, meta)
+  return region ? { meta, region } : null
+}
+
+function ensureCityState(campaign: CampaignState, key: string): CampaignCityState {
+  let cs = campaign.cities[key]
+  if (!cs) {
+    cs = { round: 1, collected: 0, cleared: false, players: {} }
+    campaign.cities[key] = cs
+  }
+  return cs
+}
 
 export const useGame = create<GameState>((set, get) => ({
   loaded: false,
   regions: [],
   players: [],
+  roster: [],
   config: DEFAULT_CONFIG,
   lastSync: null,
   pending: 0,
   online: navigator.onLine,
   syncing: false,
 
-  phase: 'home',
+  campaign: null,
+  phase: 'teacher',
   region: null,
   sessionId: null,
-  playable: [],
-  index: 0,
-  answers: [],
+
+  currentPlayer: null,
+  turnQueue: [],
+  turnQuestions: [],
+  turnIndex: 0,
+  turnCorrect: 0,
+  paused: false,
   lastResult: null,
 
   init: async () => {
     const banks = await loadBanks()
+    const campaign = await loadCampaign()
+    const savedRoster = await loadRoster()
     window.addEventListener('online', () => set({ online: true }))
     window.addEventListener('offline', () => set({ online: false }))
     set({
       loaded: true,
       regions: banks?.regions ?? [],
       players: banks?.players ?? [],
+      roster: savedRoster ?? banks?.players ?? [],
       config: banks?.config ?? DEFAULT_CONFIG,
+      campaign,
       lastSync: await getLastSync(),
       pending: await pendingCount(),
-      online: navigator.onLine
+      online: navigator.onLine,
+      phase: 'teacher'
     })
   },
 
@@ -99,13 +173,11 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().syncing) return { ok: false, error: '同步中' }
     set({ syncing: true })
     try {
-      // 1) upload anything pending
       const unsynced = await getUnsynced()
       if (unsynced.length) {
         await pushResults(unsynced.map(stripStored))
         await markSynced(unsynced.map((r) => r.key))
       }
-      // 2) download latest banks
       const banks = await fetchBanks()
       await saveBanks(banks)
       set({
@@ -125,81 +197,239 @@ export const useGame = create<GameState>((set, get) => ({
 
   loadSample: async () => {
     await saveBanks(SAMPLE_BANKS)
+    const { roster } = get()
     set({
       regions: SAMPLE_BANKS.regions,
       players: SAMPLE_BANKS.players,
       config: SAMPLE_BANKS.config,
+      roster: roster.length ? roster : SAMPLE_BANKS.players,
       lastSync: await getLastSync()
     })
   },
 
-  startRound: (region) => {
-    set({ region, sessionId: newSessionId(), phase: 'name', lastResult: null })
+  setRoster: async (names) => {
+    const clean = names.map((n) => n.trim()).filter(Boolean)
+    await saveRoster(clean)
+    set({ roster: clean })
   },
 
-  restartRound: () => {
-    set({ sessionId: newSessionId(), phase: 'name', lastResult: null })
+  startCampaign: async () => {
+    const { roster, regions } = get()
+    if (!getPlayableCities(regions).length || !roster.length) return
+    const now = new Date().toISOString()
+    const campaign: CampaignState = {
+      roster: [...roster],
+      cityIndex: 0,
+      cities: {},
+      target: Math.min(BASE_TARGET, roster.length * PER_TURN),
+      perTurn: PER_TURN,
+      startedAt: now,
+      updatedAt: now
+    }
+    await saveCampaign(campaign)
+    const ac = activeCity(regions, campaign)
+    set({ campaign, region: ac?.region.name ?? null, phase: 'cityIntro' })
   },
 
-  beginPlayer: (name) => {
-    const region = get().regions.find((r) => r.name === get().region)
-    if (!region) return
+  continueCampaign: () => {
+    const { campaign, regions } = get()
+    if (!campaign) return
+    const ac = activeCity(regions, campaign)
+    if (!ac) { set({ phase: 'gameWon' }); return }
+    set({ region: ac.region.name, phase: 'cityIntro' })
+  },
+
+  clearSave: async () => {
+    await clearCampaign()
+    set({ campaign: null })
+  },
+
+  beginRound: () => {
+    const { campaign, regions } = get()
+    if (!campaign) return
+    const ac = activeCity(regions, campaign)
+    if (!ac) { set({ phase: 'gameWon' }); return }
+    const cs = ensureCityState(campaign, ac.meta.region)
+    const eligible = campaign.roster.filter((name) => {
+      const ps = cs.players[name]
+      if (!ps) return true
+      return ps.questionIds.some((id) => !ps.correct[id])
+    })
+    for (const name of campaign.roster) {
+      const ps = cs.players[name]
+      if (ps) ps.servedThisRound = false
+    }
     set({
-      playable: makePlayable(region.questions),
-      index: 0,
-      answers: [],
-      phase: 'quiz',
-      lastResult: { player: name, correct: 0, total: region.questions.length, progressDiff: null }
+      campaign: { ...campaign },
+      sessionId: newSessionId(),
+      region: ac.region.name,
+      turnQueue: shuffle(eligible),
+      paused: false
+    })
+    if (!get().turnQueue.length) { get().endRound(); return }
+    get().nextTurn()
+  },
+
+  nextTurn: () => {
+    const { campaign, regions, turnQueue } = get()
+    if (!campaign) return
+    const ac = activeCity(regions, campaign)
+    if (!ac) { set({ phase: 'gameWon' }); return }
+    const cs = ensureCityState(campaign, ac.meta.region)
+    const queue = [...turnQueue]
+    const name = queue.shift()
+    if (!name) { get().endRound(); return }
+
+    let ps = cs.players[name]
+    let questions: Question[]
+    if (!ps) {
+      const dealt = shuffle(ac.region.questions).slice(0, campaign.perTurn)
+      ps = { questionIds: dealt.map((q) => q.id), correct: {}, servedThisRound: false }
+      cs.players[name] = ps
+      questions = dealt
+    } else {
+      questions = ps.questionIds
+        .filter((id) => !ps!.correct[id])
+        .map((id) => ac.region.questions.find((q) => q.id === id))
+        .filter((q): q is Question => !!q)
+    }
+
+    if (!questions.length) {
+      ps.servedThisRound = true
+      set({ campaign: { ...campaign }, turnQueue: queue })
+      get().nextTurn()
+      return
+    }
+
+    set({
+      campaign: { ...campaign },
+      turnQueue: queue,
+      currentPlayer: name,
+      turnQuestions: makePlayable(questions),
+      turnIndex: 0,
+      turnCorrect: 0,
+      paused: false,
+      phase: 'encounter'
     })
   },
 
+  attack: () => set({ phase: 'quiz', paused: false }),
+
   answer: async (optionIndex) => {
-    const { playable, index, answers, lastResult, region, sessionId } = get()
-    const q = playable[index]
-    if (!q || !lastResult || !region || !sessionId) return
+    const { campaign, regions, turnQuestions, turnIndex, currentPlayer, sessionId } = get()
+    const q = turnQuestions[turnIndex]
+    const ac = activeCity(regions, campaign)
+    if (!campaign || !ac || !q || !currentPlayer || !sessionId) {
+      return { correct: false, dropped: false }
+    }
 
     const correct = optionIndex !== null && optionIndex === q.correctIndex
     const row: AnswerResult = {
       timestamp: new Date().toISOString(),
-      region,
+      region: ac.region.name,
       sessionId,
-      playerName: lastResult.player,
+      playerName: currentPlayer,
       questionId: q.id,
       chosen: optionIndex !== null ? q.options[optionIndex] : '',
       correct
     }
-    const nextAnswers = [...answers, row]
+    await addResults([row])
 
-    if (index + 1 < playable.length) {
-      set({ answers: nextAnswers, index: index + 1 })
-      return
+    const cs = ensureCityState(campaign, ac.meta.region)
+    const ps = cs.players[currentPlayer]!
+    let dropped = false
+    if (correct && !ps.correct[q.id]) {
+      ps.correct[q.id] = true
+      cs.collected += 1
+      dropped = true
     }
-
-    // round finished for this player
-    await addResults(nextAnswers)
-    const correctCount = nextAnswers.filter((a) => a.correct).length
-    const progressDiff = await computeProgress(region, lastResult.player, sessionId, correctCount)
+    campaign.updatedAt = new Date().toISOString()
+    await saveCampaign(campaign)
 
     set({
-      answers: nextAnswers,
-      phase: 'result',
-      pending: await pendingCount(),
-      lastResult: {
-        player: lastResult.player,
-        correct: correctCount,
-        total: nextAnswers.length,
-        progressDiff
-      }
+      campaign: { ...campaign },
+      turnCorrect: get().turnCorrect + (dropped ? 1 : 0),
+      pending: await pendingCount()
     })
 
-    // opportunistic upload if we happen to be online
     if (navigator.onLine) void get().sync()
+    return { correct, dropped }
   },
 
-  goHome: () => set({ phase: 'home' }),
-  goReport: () => set({ phase: 'report' }),
-  goHistory: () => set({ phase: 'history' }),
-  backToName: () => set({ phase: 'name' })
+  advanceTurn: () => {
+    const { turnQuestions, turnIndex } = get()
+    if (turnIndex + 1 < turnQuestions.length) {
+      set({ turnIndex: turnIndex + 1, paused: false })
+    } else {
+      get().endTurn()
+    }
+  },
+
+  endTurn: () => {
+    const { campaign, regions, currentPlayer, turnQuestions, turnCorrect } = get()
+    if (!campaign || !currentPlayer) return
+    const ac = activeCity(regions, campaign)
+    if (!ac) return
+    const cs = ensureCityState(campaign, ac.meta.region)
+    const ps = cs.players[currentPlayer]
+    if (ps) ps.servedThisRound = true
+    const lastResult: PlayerResult = {
+      player: currentPlayer,
+      correct: turnCorrect,
+      total: turnQuestions.length,
+      progressDiff: null
+    }
+    if (cs.collected >= campaign.target) cs.cleared = true
+    void saveCampaign(campaign)
+    set({
+      campaign: { ...campaign },
+      lastResult,
+      phase: cs.cleared ? 'cityCleared' : 'turnResult'
+    })
+  },
+
+  continueAfterTurn: () => {
+    if (get().turnQueue.length) get().nextTurn()
+    else get().endRound()
+  },
+
+  endRound: () => {
+    const { campaign, regions } = get()
+    if (!campaign) return
+    const ac = activeCity(regions, campaign)
+    if (ac) ensureCityState(campaign, ac.meta.region).round += 1
+    campaign.updatedAt = new Date().toISOString()
+    void saveCampaign(campaign)
+    set({ campaign: { ...campaign }, currentPlayer: null, phase: 'roundEnd' })
+  },
+
+  advanceCity: () => {
+    const { campaign, regions } = get()
+    if (!campaign) return
+    const ac = activeCity(regions, campaign)
+    if (ac) ensureCityState(campaign, ac.meta.region).cleared = true
+    campaign.cityIndex += 1
+    campaign.updatedAt = new Date().toISOString()
+    void saveCampaign(campaign)
+    if (campaign.cityIndex >= getPlayableCities(regions).length) {
+      set({ campaign: { ...campaign }, phase: 'gameWon' })
+    } else {
+      const next = activeCity(regions, campaign)
+      set({ campaign: { ...campaign }, region: next?.region.name ?? null, phase: 'cityIntro' })
+    }
+  },
+
+  togglePause: () => set({ paused: !get().paused }),
+
+  goTeacher: () => set({ phase: 'teacher' }),
+  goHome: () => set({ phase: 'teacher' }),
+  goRoster: () => set({ phase: 'roster' }),
+  goReport: () => {
+    const { region, regions, campaign } = get()
+    const r = region ?? activeCity(regions, campaign)?.region.name ?? regions[0]?.name ?? null
+    set({ region: r, phase: 'report' })
+  },
+  goHistory: () => set({ phase: 'history' })
 }))
 
 function stripStored(r: { synced: 0 | 1; key: number } & AnswerResult): AnswerResult {
@@ -207,28 +437,33 @@ function stripStored(r: { synced: 0 | 1; key: number } & AnswerResult): AnswerRe
   return rest
 }
 
-/** Diff vs this player's most recent *prior* session in the same region. */
-async function computeProgress(
-  region: string,
-  player: string,
-  currentSession: string,
-  currentCorrect: number
-): Promise<number | null> {
-  const all = await getAllResults()
-  const prior = all.filter(
-    (r) => r.region === region && r.playerName === player && r.sessionId !== currentSession
-  )
-  if (!prior.length) return null
+// ---- selectors for screens ----
 
-  // group by session, find the latest by max timestamp
-  const bySession = new Map<string, { correct: number; ts: string }>()
-  for (const r of prior) {
-    const cur = bySession.get(r.sessionId) ?? { correct: 0, ts: '' }
-    cur.correct += r.correct ? 1 : 0
-    if (r.timestamp > cur.ts) cur.ts = r.timestamp
-    bySession.set(r.sessionId, cur)
+export interface ActiveCityView {
+  meta: CityMeta
+  region: Region
+  collected: number
+  target: number
+  round: number
+  cleared: boolean
+}
+
+/** The city currently in play, with its collective progress. null if no game. */
+export function selectActiveCity(s: GameState): ActiveCityView | null {
+  const ac = activeCity(s.regions, s.campaign)
+  if (!ac || !s.campaign) return null
+  const city = s.campaign.cities[ac.meta.region]
+  return {
+    meta: ac.meta,
+    region: ac.region,
+    collected: city?.collected ?? 0,
+    target: s.campaign.target,
+    round: city?.round ?? 1,
+    cleared: city?.cleared ?? false
   }
-  let latest: { correct: number; ts: string } | null = null
-  for (const v of bySession.values()) if (!latest || v.ts > latest.ts) latest = v
-  return latest ? currentCorrect - latest.correct : null
+}
+
+/** Ordered list of cities that have a question bank (for the map / save view). */
+export function selectPlayableCities(s: GameState): CityMeta[] {
+  return getPlayableCities(s.regions)
 }

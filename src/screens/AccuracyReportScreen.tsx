@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Lock, ChevronLeft, RotateCcw, Clock } from 'lucide-react'
+import { Lock, ChevronLeft, Clock, Home } from 'lucide-react'
 import { useGame } from '../state/gameStore'
 import { buildReport, type Cell, type ReportData } from '../lib/report'
 import { Stat, AccuracyBar, MatrixCell, Button } from '../ds'
@@ -14,7 +14,7 @@ const CELL_STATE: Record<Cell, MatrixState> = {
 }
 
 export function AccuracyReportScreen() {
-  const { regions, region, sessionId, config, restartRound, goHistory, goHome } = useGame()
+  const { regions, region, sessionId, config, goHistory, goHome } = useGame()
   const [scope, setScope] = useState<'session' | 'all'>('session')
   const [view, setView] = useState<'class' | 'matrix'>('class')
   const [data, setData] = useState<ReportData | null>(null)
@@ -84,6 +84,7 @@ export function AccuracyReportScreen() {
           {/* stat strip */}
           <div style={{ display: 'flex', gap: 40, padding: '18px 32px', borderBottom: '1px solid var(--border)' }}>
             <Stat caption="全班平均正確率" value={summary!.avg} unit="%" tone="brand" />
+            <Stat caption="全班平均錯誤率" value={100 - summary!.avg} unit="%" tone="wrong" />
             <Stat caption="作答人數" value={summary!.players} unit="人" />
             <Stat caption="題數" value={summary!.questions} unit="題" />
             <Stat caption="最弱題" value={`第 ${summary!.weakIdx + 1}`} unit="題" tone="wrong" />
@@ -96,6 +97,9 @@ export function AccuracyReportScreen() {
                 {data.stats.map((s, qi) => (
                   <div key={s.questionId}>
                     <AccuracyBar label={`第 ${qi + 1} 題`} correct={s.correct} answered={s.total} />
+                    <div style={{ marginLeft: 108, marginTop: 2, fontSize: 'var(--fs-xs)', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                      正確率 {Math.round(s.rate * 100)}%・錯誤率 {Math.round((1 - s.rate) * 100)}%（作答 {s.total} 次）
+                    </div>
                     {qi === summary!.weakIdx && (
                       <div style={{ marginTop: 4, marginLeft: 108, fontSize: 'var(--fs-xs)', color: 'var(--wrong)', fontWeight: 700 }}>
                         ⚠ 全班最弱 · 建議課堂檢討：{s.label}
@@ -143,7 +147,7 @@ export function AccuracyReportScreen() {
 
       {/* actions */}
       <div style={{ display: 'flex', gap: 10, padding: '16px 32px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
-        <Button variant="primary" iconLeft={<RotateCcw size={20} />} onClick={restartRound}>用同題庫再玩一局</Button>
+        <Button variant="primary" iconLeft={<Home size={20} />} onClick={goHome}>回老師頁</Button>
         <Button variant="ghost" iconLeft={<Clock size={20} />} onClick={goHistory}>看歷史</Button>
       </div>
     </div>

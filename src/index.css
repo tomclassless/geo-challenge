@@ -64,3 +64,32 @@ body {
   font-size: var(--fs-title);
   color: var(--text-muted);
 }
+
+/* ---- RPG adventure motion ---- */
+@keyframes rpgEnter {
+  0%   { transform: translateY(-40px) scale(.6); opacity: 0; }
+  60%  { transform: translateY(8px) scale(1.08); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes rpgFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes rpgHit {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25%      { transform: translateX(-10px) rotate(-4deg); }
+  75%      { transform: translateX(10px) rotate(4deg); }
+}
+@keyframes rpgDropFly {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--fly-x, -240px), var(--fly-y, 120px)) scale(.5); opacity: 0; }
+}
+@keyframes rpgPop {
+  0%   { transform: scale(.2); opacity: 0; }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rpgGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow, rgba(255,255,255,.4)); }
+  50%      { box-shadow: 0 0 36px 10px var(--glow, rgba(255,255,255,.4)); }
+}

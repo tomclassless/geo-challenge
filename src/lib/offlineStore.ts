@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { AnswerResult, BanksPayload } from './types'
+import type { AnswerResult, BanksPayload, CampaignState } from './types'
 
 export interface StoredResult extends AnswerResult {
   /** 0 = not yet uploaded, 1 = uploaded */
@@ -46,6 +46,33 @@ export async function loadBanks(): Promise<BanksPayload | null> {
 export async function getLastSync(): Promise<string | null> {
   const db = await getDB()
   return ((await db.get('kv', 'lastSync')) as string | undefined) ?? null
+}
+
+// ---- RPG campaign save & roster (key-value) ----
+
+export async function saveCampaign(c: CampaignState): Promise<void> {
+  const db = await getDB()
+  await db.put('kv', c, 'campaign')
+}
+
+export async function loadCampaign(): Promise<CampaignState | null> {
+  const db = await getDB()
+  return ((await db.get('kv', 'campaign')) as CampaignState | undefined) ?? null
+}
+
+export async function clearCampaign(): Promise<void> {
+  const db = await getDB()
+  await db.delete('kv', 'campaign')
+}
+
+export async function saveRoster(names: string[]): Promise<void> {
+  const db = await getDB()
+  await db.put('kv', names, 'roster')
+}
+
+export async function loadRoster(): Promise<string[] | null> {
+  const db = await getDB()
+  return ((await db.get('kv', 'roster')) as string[] | undefined) ?? null
 }
 
 // ---- results ----

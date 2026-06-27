@@ -1,22 +1,22 @@
 import { useState } from 'react'
-import { BarChart3, Settings, MapPin, Wifi, Clock, Upload, RefreshCw, ArrowRight } from 'lucide-react'
-import { useGame } from '../state/gameStore'
+import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2 } from 'lucide-react'
+import { useGame, selectActiveCity, selectPlayableCities } from '../state/gameStore'
 import { getApiUrl, setApiUrl } from '../lib/config'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
 import { Modal } from '../ds/shell/Modal'
+import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 
+/** 老師操作頁 — the hub shown before a game and after every round ends. */
 export function HomeScreen() {
   const {
-    regions, region, lastSync, pending, online, syncing,
-    startRound, sync, goReport, loadSample
+    regions, roster, campaign, lastSync, pending, online, syncing,
+    sync, loadSample, startCampaign, continueCampaign, clearSave, goReport, goHistory, goRoster
   } = useGame()
+  const active = useGame(selectActiveCity)
+  const cities = useGame(selectPlayableCities)
 
-  const [selected, setSelected] = useState(region ?? regions[0]?.name ?? '')
   const [showSettings, setShowSettings] = useState(false)
   const [message, setMessage] = useState('')
-
-  const region0 = selected || regions[0]?.name || ''
-  const current = regions.find((r) => r.name === region0)
 
   const doSync = async () => {
     setMessage('')
@@ -24,120 +24,167 @@ export function HomeScreen() {
     setMessage(res.ok ? '同步完成 ✓' : '同步失敗：' + (res.error ?? ''))
   }
 
+  const onStart = () => {
+    if (!roster.length) { goRoster(); return }
+    if (campaign && !window.confirm('已有存檔，開始新遊戲會覆蓋目前進度，確定嗎？')) return
+    void startCampaign()
+  }
+
+  const clearedCount = campaign ? cities.filter((c) => campaign.cities[c.region]?.cleared).length : 0
+
+  const onDeleteSave = () => {
+    if (window.confirm('確定要刪除目前的存檔嗎？此動作無法復原（玩家答題的雲端統計不受影響）。')) {
+      void clearSave()
+    }
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       {/* top bar */}
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 36px', borderBottom: '1px solid var(--border)', background: 'var(--surface)',
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
         <Logo />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Button variant="ghost" iconLeft={<BarChart3 size={20} />} onClick={goReport}>老師報表</Button>
+          <Button variant="ghost" iconLeft={<Clock size={20} />} onClick={goHistory}>歷史</Button>
           <IconButton variant="soft" icon={<Settings size={22} />} label="設定" onClick={() => setShowSettings(true)} />
         </div>
       </div>
 
       {regions.length === 0 ? (
-        /* empty state — no banks yet */
         <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: 36 }}>
           <Card tone="plain" pad="lg" style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'center' }}>
             <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>還沒有題庫</h2>
             <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              請先設定後端網址，再按「立即同步」把題庫下載到平板；或先載入範例題庫試玩。
+              請先設定後端網址再「立即同步」下載六都題庫；或先載入範例題庫試玩整個冒險。
             </p>
             <Button variant="primary" size="lg" block onClick={() => setShowSettings(true)}>設定後端網址</Button>
-            <Button variant="secondary" size="lg" block onClick={() => void loadSample()}>🧪 先載入範例題庫試玩</Button>
+            <Button variant="secondary" size="lg" block onClick={() => void loadSample()}>🧪 載入範例題庫（六都）試玩</Button>
           </Card>
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 28, padding: 36, overflow: 'hidden' }}>
-          {/* left: this week */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minHeight: 0 }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, padding: 28, overflow: 'hidden' }}>
+          {/* left: adventure + save */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: 0 }}>
             <div>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-xs)', letterSpacing: 'var(--ls-wide)', color: 'var(--text-muted)' }}>本週主題</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
-                <MapPin size={40} style={{ color: 'var(--brand)' }} />
-                <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 52, lineHeight: 1, color: 'var(--text)' }}>
-                  {region0 || '—'}
-                </span>
-                {current && <Badge tone="brand" soft>{current.questions.length} 題</Badge>}
-              </div>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-xs)', letterSpacing: 'var(--ls-wide)', color: 'var(--text-muted)' }}>冒險主題</span>
+              <h1 style={{ margin: '6px 0 0', fontWeight: 900, fontSize: 40, lineHeight: 1.15 }}>
+                {WUKONG_EMOJI} 孫悟空逃離如來佛祖掌心 {BUDDHA_EMOJI}
+              </h1>
+              <p style={{ margin: '8px 0 0', color: 'var(--text-muted)' }}>
+                從桃園出發，繞台灣六都一圈，吃掉足夠特產才能逃出掌心！
+              </p>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>選擇地區（題庫來自已同步資料）</span>
-              <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                {regions.map((r) => {
-                  const active = r.name === region0
+            {/* six-city path */}
+            <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>
+                六都進度{campaign ? `（已通關 ${clearedCount}/${cities.length}）` : ''}
+              </span>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {cities.map((c, i) => {
+                  const cs = campaign?.cities[c.region]
+                  const isCurrent = active?.meta.region === c.region
                   return (
-                    <button
-                      key={r.name}
-                      onClick={() => setSelected(r.name)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px',
-                        minHeight: 'var(--hit-min)', borderRadius: 'var(--r-md)', cursor: 'pointer',
-                        background: active ? 'var(--brand)' : 'var(--surface)', color: active ? '#fff' : 'var(--text)',
-                        border: active ? '3px solid var(--brand)' : '3px solid var(--border)',
-                        fontWeight: 700, fontSize: 'var(--fs-title)', fontFamily: 'var(--font-sans)',
-                      }}
-                    >
-                      {r.name}
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, fontSize: 13, color: active ? 'var(--teal-100)' : 'var(--text-subtle)' }}>
-                        {r.questions.length} 題
-                      </span>
-                    </button>
+                    <div key={c.region} style={{
+                      flex: '1 1 140px', padding: '10px 12px', borderRadius: 'var(--r-md)',
+                      border: isCurrent ? `3px solid ${c.general.color}` : '2px solid var(--border)',
+                      background: cs?.cleared ? 'var(--correct-bg)' : 'var(--surface)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 26 }}>{c.general.emoji}</span>
+                        <div style={{ lineHeight: 1.2 }}>
+                          <div style={{ fontWeight: 800 }}>{i + 1}. {c.region}</div>
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{c.general.name} · {c.specialty.emoji}{c.specialty.name}</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 6, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-xs)', fontWeight: 700, color: cs?.cleared ? 'var(--green-700)' : 'var(--text-muted)' }}>
+                        {cs?.cleared ? '✓ 已通關' : cs ? `特產 ${cs.collected}/${campaign!.target}・第${cs.round}局` : '尚未開始'}
+                      </div>
+                    </div>
                   )
                 })}
               </div>
-            </div>
+            </Card>
 
-            <div>
-              <Button variant="primary" size="xl" block iconRight={<ArrowRight size={26} />} onClick={() => startRound(region0)} disabled={!region0}>
-                開始這一局
-              </Button>
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-sm)', marginTop: 14, marginBottom: 0 }}>
-                每位小朋友會答完整個地區題庫，題目與選項都會打亂。
-              </p>
-            </div>
+            {/* save record + start/continue */}
+            <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 'auto' }}>
+              {campaign && active ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: 48 }}>{active.meta.general.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 900, fontSize: 'var(--fs-title)' }}>存檔：{active.meta.region}・第 {active.round} 局</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
+                      已蒐集 {active.collected}/{active.target} 個{active.meta.specialty.name}・參與者 {campaign.roster.length} 人
+                    </div>
+                  </div>
+                  <Badge tone="brand" soft>{WUKONG_EMOJI} 進行中</Badge>
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-muted)' }}>還沒有存檔。先設定參與者名單，再開始新遊戲。</div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {campaign && (
+                  <Button variant="primary" size="xl" iconLeft={<Play size={24} />} onClick={continueCampaign} style={{ flex: 1 }}>
+                    繼續遊戲（讀取存檔）
+                  </Button>
+                )}
+                <Button variant={campaign ? 'secondary' : 'primary'} size="xl" iconLeft={<Sword size={22} />} onClick={onStart} style={{ flex: 1 }}>
+                  {campaign ? '開始新遊戲' : '開始遊戲'}
+                </Button>
+              </div>
+
+              {campaign && (
+                <Button variant="ghost" iconLeft={<Trash2 size={20} />} onClick={onDeleteSave} style={{ alignSelf: 'flex-start', color: 'var(--wrong)' }}>
+                  刪除存檔
+                </Button>
+              )}
+            </Card>
           </div>
 
-          {/* right: sync */}
-          <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Wifi size={22} style={{ color: online ? 'var(--correct)' : 'var(--text-subtle)' }} />
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-title)' }}>同步狀態</span>
-              <Badge tone={online ? 'correct' : 'neutral'} soft style={{ marginLeft: 'auto' }}>
-                {online ? '已連網' : '離線中'}
-              </Badge>
-            </div>
+          {/* right: roster + sync */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: 0 }}>
+            <Card tone="plain" pad="lg" interactive onClick={goRoster} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'var(--brand-soft)', display: 'grid', placeItems: 'center', color: 'var(--brand-strong)' }}>
+                <Users size={26} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 'var(--fs-title)' }}>參與者名單</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>目前 {roster.length} 人（建議 ≥ 20 人）</div>
+              </div>
+              <Flag size={20} style={{ color: 'var(--text-subtle)' }} />
+            </Card>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
-                <Clock size={16} /> 上次同步時間
-              </span>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-title)' }}>
-                {lastSync ? new Date(lastSync).toLocaleString() : '尚未同步'}
-              </span>
-            </div>
+            <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Wifi size={22} style={{ color: online ? 'var(--correct)' : 'var(--text-subtle)' }} />
+                <span style={{ fontWeight: 700, fontSize: 'var(--fs-title)' }}>雲端同步</span>
+                <Badge tone={online ? 'correct' : 'neutral'} soft style={{ marginLeft: 'auto' }}>{online ? '已連網' : '離線中'}</Badge>
+              </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', border: '1px solid var(--amber-200)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: 'var(--amber-600)' }}>
-                <Upload size={18} /> 待上傳筆數
-              </span>
-              <Stat value={pending} unit="筆" tone="accent" />
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
+                  <Clock size={16} /> 上次同步時間
+                </span>
+                <span style={{ fontWeight: 700 }}>{lastSync ? new Date(lastSync).toLocaleString() : '尚未同步'}</span>
+              </div>
 
-            <Button variant="accent" size="lg" block disabled={syncing} iconLeft={<RefreshCw size={22} />} onClick={doSync}>
-              {syncing ? '同步中…' : '立即同步（在家按）'}
-            </Button>
-            {message && <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{message}</p>}
-            <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--fs-xs)', lineHeight: 1.5, marginTop: 'auto', marginBottom: 0 }}>
-              建議在家、有網路時同步：先把題庫與名單下載到平板，課堂上即使離線也能玩。
-            </p>
-          </Card>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', border: '1px solid var(--amber-200)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: 'var(--amber-600)' }}>
+                  <Upload size={18} /> 待上傳筆數
+                </span>
+                <Stat value={pending} unit="筆" tone="accent" />
+              </div>
+
+              <Button variant="accent" size="lg" block disabled={syncing} iconLeft={<RefreshCw size={22} />} onClick={doSync}>
+                {syncing ? '同步中…' : '雲端同步（更新題庫／上傳成績）'}
+              </Button>
+              {message && <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{message}</p>}
+              <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--fs-xs)', lineHeight: 1.5, marginTop: 'auto', marginBottom: 0 }}>
+                正確率與錯誤率會上傳雲端，可在「老師報表」查看每位玩家、每題的統計。
+              </p>
+            </Card>
+          </div>
         </div>
       )}
 
@@ -158,10 +205,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
         value={url}
         placeholder="https://script.google.com/macros/s/.../exec"
         onChange={(e) => setUrl(e.target.value)}
-        style={{
-          fontSize: 'var(--fs-body)', padding: 14, border: '2px solid var(--border-strong)',
-          borderRadius: 'var(--r-md)', width: '100%', fontFamily: 'var(--font-sans)',
-        }}
+        style={{ fontSize: 'var(--fs-body)', padding: 14, border: '2px solid var(--border-strong)', borderRadius: 'var(--r-md)', width: '100%', fontFamily: 'var(--font-sans)' }}
       />
       <p style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)', margin: 0 }}>
         老師 PIN 與每題秒數請在 Google 試算表的 Config 分頁設定，同步後生效。

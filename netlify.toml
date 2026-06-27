@@ -1,0 +1,14 @@
+# Netlify build settings for the geo-challenge PWA.
+# With the GitHub repo connected, Netlify reads this automatically — no need to
+# type the build command / publish dir in the dashboard.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Single-page app: serve index.html for any path (safe even though this app
+# doesn't use client-side routing).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
