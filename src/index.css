@@ -80,6 +80,16 @@ body {
   25%      { transform: translateX(-10px) rotate(-4deg); }
   75%      { transform: translateX(10px) rotate(4deg); }
 }
+@keyframes rpgHitBig {
+  0%, 100% { transform: translateX(0) rotate(0) scale(1); }
+  15%      { transform: translateX(-14px) rotate(-8deg) scale(1.1); }
+  40%      { transform: translateX(12px) rotate(7deg) scale(1.06); }
+  65%      { transform: translateX(-7px) rotate(-4deg) scale(1.03); }
+}
+@keyframes rpgFlash {
+  0%   { opacity: 0.6; }
+  100% { opacity: 0; }
+}
 @keyframes rpgDropFly {
   0%   { transform: translate(0, 0) scale(1); opacity: 1; }
   100% { transform: translate(var(--fly-x, -240px), var(--fly-y, 120px)) scale(.5); opacity: 0; }

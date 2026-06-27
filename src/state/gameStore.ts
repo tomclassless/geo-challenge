@@ -66,7 +66,7 @@ interface GameState {
   loadSample: () => Promise<void>
   setRoster: (names: string[]) => Promise<void>
 
-  startCampaign: () => Promise<void>
+  startCampaign: (cityIndex?: number) => Promise<void>
   continueCampaign: (id: string) => void
   deleteSave: (id: string) => Promise<void>
 
@@ -243,16 +243,19 @@ export const useGame = create<GameState>((set, get) => ({
     set({ roster: clean })
   },
 
-  startCampaign: async () => {
+  startCampaign: async (cityIndex = 0) => {
     const { roster, regions, campaigns } = get()
-    if (!getPlayableCities(regions).length || !roster.length) return
+    const list = getPlayableCities(regions)
+    if (!list.length || !roster.length) return
+    const idx = Math.max(0, Math.min(cityIndex, list.length - 1))
+    const meta = list[idx]
     const d = new Date()
     const now = d.toISOString()
     const campaign: CampaignState = {
       id: newId(),
-      name: formatSaveName(d),
+      name: `${meta.region}・${formatSaveName(d)}`,
       roster: [...roster],
-      cityIndex: 0,
+      cityIndex: idx,
       cities: {},
       target: Math.min(BASE_TARGET, roster.length * PER_TURN),
       perTurn: PER_TURN,

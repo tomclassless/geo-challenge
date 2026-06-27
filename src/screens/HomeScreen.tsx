@@ -19,6 +19,7 @@ export function HomeScreen() {
 
   const [showSettings, setShowSettings] = useState(false)
   const [message, setMessage] = useState('')
+  const [selCity, setSelCity] = useState(0)
 
   const doSync = async () => {
     setMessage('')
@@ -26,9 +27,9 @@ export function HomeScreen() {
     setMessage(res.ok ? '同步完成 ✓' : '同步失敗：' + (res.error ?? ''))
   }
 
-  const onStart = () => {
+  const onStart = (cityIndex: number) => {
     if (!roster.length) { goRoster(); return }
-    void startCampaign()
+    void startCampaign(cityIndex)
   }
 
   const onDeleteSave = (s: CampaignState) => {
@@ -78,25 +79,38 @@ export function HomeScreen() {
               </p>
             </div>
 
-            {/* six-city overview (static) */}
+            {/* choose a city to challenge */}
             <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>六都關卡與天兵</span>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>選擇要挑戰的城市（一場玩一都）</span>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {cities.map((c, i) => (
-                  <div key={c.region} style={{ flex: '1 1 140px', padding: '8px 10px', borderRadius: 'var(--r-md)', border: '2px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 24 }}>{c.general.emoji}</span>
-                    <div style={{ lineHeight: 1.2 }}>
-                      <div style={{ fontWeight: 800, fontSize: 'var(--fs-sm)' }}>{i + 1}. {c.region}</div>
-                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{c.general.name} · {c.specialty.emoji}{c.specialty.name}</div>
-                    </div>
-                  </div>
-                ))}
+                {cities.map((c, i) => {
+                  const on = selCity === i
+                  return (
+                    <button
+                      key={c.region}
+                      onClick={() => setSelCity(i)}
+                      style={{
+                        flex: '1 1 140px', padding: '8px 10px', borderRadius: 'var(--r-md)', cursor: 'pointer',
+                        textAlign: 'left', fontFamily: 'var(--font-sans)',
+                        border: on ? `3px solid ${c.general.color}` : '2px solid var(--border)',
+                        background: on ? `${c.general.color}1A` : 'var(--surface)',
+                        display: 'flex', alignItems: 'center', gap: 8
+                      }}
+                    >
+                      <span style={{ fontSize: 24 }}>{c.general.emoji}</span>
+                      <div style={{ lineHeight: 1.2 }}>
+                        <div style={{ fontWeight: 800, fontSize: 'var(--fs-sm)' }}>{i + 1}. {c.region}</div>
+                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{c.general.name} · {c.specialty.emoji}{c.specialty.name}</div>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </Card>
 
-            {/* start new game */}
-            <Button variant="primary" size="lg" block iconLeft={<Sword size={20} />} onClick={onStart}>
-              {roster.length ? '開始新遊戲（建立新存檔）' : '先設定參與者名單'}
+            {/* start new game for the selected city */}
+            <Button variant="primary" size="lg" block iconLeft={<Sword size={20} />} onClick={() => onStart(selCity)}>
+              {roster.length ? `開始新遊戲：${cities[selCity]?.region ?? ''}` : '先設定參與者名單'}
             </Button>
 
             {/* saves list */}
@@ -177,21 +191,20 @@ function SaveRow({
   onContinue: () => void
   onDelete: () => void
 }) {
-  const cleared = cities.filter((c) => save.cities[c.region]?.cleared).length
-  const done = save.cityIndex >= cities.length
   const meta = cities[Math.min(save.cityIndex, cities.length - 1)]
   const cs = meta ? save.cities[meta.region] : undefined
-  const status = done
-    ? '🏆 全破關'
-    : `目前：${meta?.region ?? '—'}・第 ${cs?.round ?? 1} 局・${meta?.specialty.emoji ?? ''}${cs?.collected ?? 0}/${save.target}`
+  const cleared = cs?.cleared
+  const status = cleared
+    ? '✓ 已通關'
+    : `第 ${cs?.round ?? 1} 局・${meta?.specialty.emoji ?? ''}${cs?.collected ?? 0}/${save.target}`
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)' }}>
-      <span style={{ fontSize: 32 }}>{done ? WUKONG_EMOJI : meta?.general.emoji}</span>
+      <span style={{ fontSize: 32 }}>{cleared ? WUKONG_EMOJI : meta?.general.emoji}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800 }}>{save.name}</div>
         <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
-          {status}・已通關 {cleared}/{cities.length}・{save.roster.length} 人
+          {meta?.region ?? '—'}・{status}・{save.roster.length} 人
         </div>
       </div>
       <Button variant="primary" iconLeft={<Play size={18} />} onClick={onContinue}>繼續</Button>

@@ -1,7 +1,7 @@
 import type { CityMeta } from '../../lib/cities'
+import { PixelGeneral } from './PixelSprites'
 
-/** The city's guardian 天兵 — big emoji with a themed glow and a name banner.
- *  Swap the emoji in cities.ts for an <img>/SVG when real art is ready. */
+/** The city's guardian 天兵 — unique pixel character with a themed glow and a name banner. */
 export function GeneralSprite({
   meta,
   playerName,
@@ -24,16 +24,14 @@ export function GeneralSprite({
           borderRadius: '50%',
           display: 'grid',
           placeItems: 'center',
-          fontSize: Math.round(size * 0.5),
-          lineHeight: 1,
           background: `${meta.general.color}1A`,
           border: `4px solid ${meta.general.color}`,
           // glow uses the general's theme colour
           ['--glow' as string]: `${meta.general.color}66`,
-          animation: hit ? 'rpgHit .4s ease' : 'rpgFloat 3s ease-in-out infinite, rpgGlow 2.6s ease-in-out infinite'
+          animation: 'rpgGlow 2.6s ease-in-out infinite'
         }}
       >
-        {meta.general.emoji}
+        <PixelGeneral meta={meta} size={Math.round(size * 0.82)} idle hit={hit} />
       </div>
 
       <div

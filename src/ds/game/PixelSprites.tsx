@@ -34,11 +34,133 @@ const WK_PAL: Record<string, string> = {
   S: '#F2C18A', E: '#2A2A2A', M: '#B23A36', A: '#C23B37', Y: '#F7C948'
 }
 
-const GEN_SPRITE = [
+// One unique sprite per 天兵, keyed by city short name.
+const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> = {
+  // 海龍王 — dragon king (horns, whiskers, scales)
+  '桃園': {
+    pal: { K: '#16384A', B: '#1C7ED6', b: '#1559A0', G: '#3FB6A0', Y: '#F0C24B', W: '#FFFFFF', E: '#0E2733', R: '#E0524D' },
+    grid: [
+      '...Y......Y...',
+      '...Y......Y...',
+      '..KBB....BBK..',
+      '..KBBBBBBBBK..',
+      '..BGBBBBBBGB..',
+      '.KBWEBBBBEWBK.',
+      '.KBBBBBBBBBBK.',
+      'WKBBBRRRRBBBKW',
+      '.KBBBBBBBBBBK.',
+      '..KBBBBBBBBK..',
+      '...BBBBBBBB...',
+      '..BGBBBBBBGB..',
+      '..BBBBBBBBBB..',
+      '...bb....bb...'
+    ]
+  },
+  // 托塔李天王 — carries a pagoda on top
+  '台北': {
+    pal: { K: '#3A2E10', P: '#EAD9A0', c: '#C99A2E', Y: '#F0C24B', S: '#F0C9A0', E: '#22222A' },
+    grid: [
+      '.....PP.......',
+      '....PPPP......',
+      '...PPPPPP.....',
+      '.....cc.......',
+      '....KYYYK.....',
+      '....KSSSK.....',
+      '....KSEEK.....',
+      '....KSSSK.....',
+      '...KYYYYYK....',
+      '..KYYYYYYYK...',
+      '..KYcYYcYYK...',
+      '..KYYYYYYYK...',
+      '...KYYYYYK....',
+      '...YY...YY....'
+    ]
+  },
+  // 哪吒 — child with two buns, red, fire wheels
+  '新北': {
+    pal: { K: '#3A2010', D: '#2A2228', S: '#F6C7A0', E: '#22222A', M: '#B23A36', R: '#E0524D', Y: '#F7C948', o: '#F59E2B' },
+    grid: [
+      '..KK....KK....',
+      '.KDDK..KDDK...',
+      '..KK....KK....',
+      '...KSSSSSSK...',
+      '...KSEESEEK...',
+      '...KSSSSSSK...',
+      '...KSSMMSSK...',
+      '....KKKKKK....',
+      '...RRRRRRRR...',
+      '..RRRYYYYRRR..',
+      '..RRRRRRRRRR..',
+      '...RRRRRRRR...',
+      '...RR....RR...',
+      '..oo......oo..'
+    ]
+  },
+  // 二郎神 — third eye on the forehead, green armour
+  '台中': {
+    pal: { K: '#1E3A2A', C: '#2F9E44', Y: '#F0C24B', S: '#F0C9A0', E: '#22222A', T: '#FFD23B' },
+    grid: [
+      '....KYYYK.....',
+      '...KCCCCCK....',
+      '...KSSTSSK....',
+      '...KSEESEEK...',
+      '...KSSSSSSK...',
+      '...KKSSSSKK...',
+      '....KKKKKK....',
+      '...CCCCCCCC...',
+      '..CCCYYYYCCC..',
+      '..CCCCCCCCCC..',
+      '...CCCCCCCC...',
+      '...CC....CC...'
+    ]
+  },
+  // 閻羅王 — tall black hat, long beard
+  '台南': {
+    pal: { D: '#2A2730', K: '#15131A', S: '#E8B58C', E: '#111111', W: '#EFE9DC', Y: '#C9A24B' },
+    grid: [
+      '..DDDDDDDDDD..',
+      '..DDDDDDDDDD..',
+      '...DDDDDDDD...',
+      '...KSSSSSSK...',
+      '...KSEESEEK...',
+      '...KSSSSSSK...',
+      '...KWWWWWWK...',
+      '...WWWWWWWW...',
+      '....WWWWWW....',
+      '..DDDDDDDDDD..',
+      '..DDDYYYYDDD..',
+      '..DDDDDDDDDD..',
+      '...DDDDDDDD...',
+      '...DD....DD...'
+    ]
+  },
+  // 太上老君 — sage with topknot, long white beard, purple robe, gourd
+  '高雄': {
+    pal: { W: '#EFE9DC', K: '#2A2230', S: '#F0C9A0', E: '#222222', P: '#7048E8', Y: '#E8C24B', g: '#3FA37A' },
+    grid: [
+      '.....WW.......',
+      '....KWWK......',
+      '...KSSSSSK....',
+      '...KSEESEEK...',
+      '...KSSSSSSK...',
+      '...KWWWWWWK...',
+      '...WWWWWWWW...',
+      '...WWWWWWWW...',
+      '....WWWWWW....',
+      '..PPPWWWWPPP..',
+      '..PPPPPPPPPP..',
+      '..PPPPPPPPYg..',
+      '...PPPPPPPP...',
+      '...PP....PP...'
+    ]
+  }
+}
+
+// Generic fallback if a city has no bespoke sprite.
+const GEN_FALLBACK = [
   '......KK......',
   '.....KCCK.....',
   '....KCCCCK....',
-  '...KCCCCCCK...',
   '...KCCCCCCK...',
   '...KSSSSSSK...',
   '...KSEESEEK...',
@@ -130,17 +252,21 @@ export function PixelWukong({ size = 140, idle = false }: { size?: number; idle?
   )
 }
 
-export function PixelGeneral({ color, size = 140, idle = false, hit = false }: { color: string; size?: number; idle?: boolean; hit?: boolean }) {
-  const pal: Record<string, string> = { C: color, K: '#2E2A33', S: '#F0C9A0', E: '#2A2A2A', D: '#6B6660' }
+export function PixelGeneral({ meta, size = 140, idle = false, hit = false }: { meta: CityMeta; size?: number; idle?: boolean; hit?: boolean }) {
+  const def = GENERALS[meta.short]
   return (
-    <svg viewBox="-14 -28 130 168" width={size} style={{ display: 'block', imageRendering: 'pixelated' }} aria-hidden>
-      <g style={hit ? { animation: 'rpgHit .4s ease' } : idle ? { animation: 'rpgFloat 3.2s ease-in-out infinite' } : undefined}>
-        {/* spear */}
-        <g shapeRendering="crispEdges">
-          <polygon points={`${0.7 * U},${-3.4 * U} ${1.7 * U},${-1.6 * U} ${-0.3 * U},${-1.6 * U}`} fill="#C0C6CC" />
-          <rect x={0.4 * U} y={-1.8 * U} width={0.8 * U} height={16 * U} fill="#9AA0A6" />
-        </g>
-        {renderGrid(GEN_SPRITE, pal)}
+    <svg viewBox="-7 -7 112 112" width={size} style={{ display: 'block', imageRendering: 'pixelated' }} aria-hidden>
+      <g style={hit ? { animation: 'rpgHitBig .5s ease' } : idle ? { animation: 'rpgFloat 3.2s ease-in-out infinite' } : undefined}>
+        {def ? (
+          renderGrid(def.grid, def.pal)
+        ) : (
+          <>
+            <g shapeRendering="crispEdges">
+              <rect x={0.4 * U} y={-2 * U} width={0.8 * U} height={15 * U} fill="#9AA0A6" />
+            </g>
+            {renderGrid(GEN_FALLBACK, { C: meta.general.color, K: '#2E2A33', S: '#F0C9A0', E: '#2A2A2A', D: '#6B6660' })}
+          </>
+        )}
       </g>
     </svg>
   )
@@ -148,13 +274,15 @@ export function PixelGeneral({ color, size = 140, idle = false, hit = false }: {
 
 export function PixelBattle({ meta, total, dropped, hit = false }: { meta: CityMeta; total: number; dropped: number; hit?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '6px 22px', borderRadius: 'var(--r-lg)', background: `linear-gradient(90deg, var(--brand-soft), ${meta.general.color}22)`, border: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '6px 22px', borderRadius: 'var(--r-lg)', background: `linear-gradient(90deg, var(--brand-soft), ${meta.general.color}22)`, border: '1px solid var(--border)' }}>
+      {hit && <div style={{ position: 'absolute', inset: 0, background: '#FFFFFF', animation: 'rpgFlash .5s ease', pointerEvents: 'none' }} />}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
         <PixelWukong size={76} idle />
         <span style={{ fontWeight: 800 }}>孫悟空</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, position: 'relative' }}>
         <div style={{ display: 'flex', gap: 6 }}>
           {Array.from({ length: total }).map((_, i) => (
             <SpecialtyIcon key={i} emoji={meta.specialty.emoji} size={24} dimmed={i < dropped} />
@@ -163,11 +291,16 @@ export function PixelBattle({ meta, total, dropped, hit = false }: { meta: CityM
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-title)', color: 'var(--wrong)' }}>VS</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
         <span style={{ fontWeight: 800 }}>{meta.general.name}</span>
-        <div style={{ transform: 'scaleX(-1)' }}>
-          <PixelGeneral color={meta.general.color} size={76} idle hit={hit} />
+        <div key={hit ? 'hit' : 'idle'} style={{ animation: hit ? 'rpgHitBig .5s ease' : undefined }}>
+          <div style={{ transform: 'scaleX(-1)' }}>
+            <PixelGeneral meta={meta} size={76} idle={!hit} />
+          </div>
         </div>
+        {hit && (
+          <span style={{ position: 'absolute', right: 4, top: -10, fontSize: 48, animation: 'rpgPop .5s ease', pointerEvents: 'none' }}>💥</span>
+        )}
       </div>
     </div>
   )
