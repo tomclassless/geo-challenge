@@ -10,7 +10,7 @@ import {
 export function QuizScreen() {
   const {
     turnQuestions, turnIndex, turnCorrect, config, currentPlayer, paused,
-    answer, advanceTurn, togglePause
+    answer, advanceTurn, togglePause, quitToTeacher
   } = useGame()
   const active = useGame(selectActiveCity)
   const q = turnQuestions[turnIndex]
@@ -63,7 +63,7 @@ export function QuizScreen() {
 
   return (
     <div style={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-      <StopButton paused={paused} onToggle={togglePause} />
+      {!paused && <StopButton paused={paused} onToggle={togglePause} />}
 
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 36px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
@@ -130,7 +130,7 @@ export function QuizScreen() {
         </div>
       )}
 
-      {paused && <PauseOverlay onResume={togglePause} />}
+      {paused && <PauseOverlay onResume={togglePause} onEnd={quitToTeacher} />}
     </div>
   )
 }

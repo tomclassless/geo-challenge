@@ -198,7 +198,9 @@ function Feather({ baseX, baseY, dir }: { baseX: number; baseY: number; dir: num
   )
 }
 
-export function PixelWukong({ size = 140, idle = false }: { size?: number; idle?: boolean }) {
+export function PixelWukong({ size = 140, idle = false, sleeping = false }: { size?: number; idle?: boolean; sleeping?: boolean }) {
+  const grid = sleeping ? WK_SPRITE.map((r, i) => (i === 7 ? '.HKS--SS--SKH.' : r)) : WK_SPRITE
+  const pal = sleeping ? { ...WK_PAL, '-': '#3A2A1E' } : WK_PAL
   return (
     <svg viewBox="-49 -63 210 224" width={size} style={{ display: 'block', imageRendering: 'pixelated' }} aria-hidden>
       <g style={idle ? { animation: 'rpgFloat 2.8s ease-in-out infinite' } : undefined}>
@@ -226,27 +228,44 @@ export function PixelWukong({ size = 140, idle = false }: { size?: number; idle?
         <Feather baseX={8 * U} baseY={1 * U} dir={1} />
 
         {/* monkey */}
-        {renderGrid(WK_SPRITE, WK_PAL)}
+        {renderGrid(grid, pal)}
 
-        {/* raised right arm */}
+        {/* raised right arm (lowered a bit while sleeping) */}
         <g shapeRendering="crispEdges" fill="#F2C18A">
-          <rect x={9.5 * U} y={11 * U} width={2 * U} height={2 * U} />
-          <rect x={10.8 * U} y={9 * U} width={2 * U} height={2 * U} />
-          <rect x={11.8 * U} y={7 * U} width={2 * U} height={2 * U} />
-          <rect x={12 * U} y={5.2 * U} width={2.4 * U} height={2.4 * U} />
+          {sleeping ? (
+            <>
+              <rect x={9.5 * U} y={12 * U} width={2 * U} height={2 * U} />
+              <rect x={11 * U} y={12.5 * U} width={2 * U} height={2 * U} />
+            </>
+          ) : (
+            <>
+              <rect x={9.5 * U} y={11 * U} width={2 * U} height={2 * U} />
+              <rect x={10.8 * U} y={9 * U} width={2 * U} height={2 * U} />
+              <rect x={11.8 * U} y={7 * U} width={2 * U} height={2 * U} />
+              <rect x={12 * U} y={5.2 * U} width={2.4 * U} height={2.4 * U} />
+            </>
+          )}
         </g>
 
-        {/* 金箍棒 — waved by the hand */}
-        <g transform={`translate(${13 * U} ${6.3 * U})`}>
-          <g>
-            <animateTransform attributeName="transform" type="rotate" values="-62;-20;-62" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" dur="1.1s" repeatCount="indefinite" />
-            <g shapeRendering="crispEdges">
-              <rect x={-4 * U} y={-0.5 * U} width={8 * U} height={U} fill="#E8C24B" />
-              <rect x={-4.3 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
-              <rect x={3.5 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
+        {/* 金箍棒 — waved by the hand (resting while sleeping) */}
+        {sleeping ? (
+          <g transform={`translate(${10 * U} ${13.5 * U}) rotate(8)`} shapeRendering="crispEdges">
+            <rect x={-4 * U} y={-0.5 * U} width={8 * U} height={U} fill="#E8C24B" />
+            <rect x={-4.3 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
+            <rect x={3.5 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
+          </g>
+        ) : (
+          <g transform={`translate(${13 * U} ${6.3 * U})`}>
+            <g>
+              <animateTransform attributeName="transform" type="rotate" values="-62;-20;-62" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" dur="1.1s" repeatCount="indefinite" />
+              <g shapeRendering="crispEdges">
+                <rect x={-4 * U} y={-0.5 * U} width={8 * U} height={U} fill="#E8C24B" />
+                <rect x={-4.3 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
+                <rect x={3.5 * U} y={-0.9 * U} width={0.8 * U} height={1.8 * U} fill="#8B5A2B" />
+              </g>
             </g>
           </g>
-        </g>
+        )}
       </g>
     </svg>
   )

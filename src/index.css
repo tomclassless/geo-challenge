@@ -90,6 +90,11 @@ body {
   0%   { opacity: 0.6; }
   100% { opacity: 0; }
 }
+@keyframes zzzFloat {
+  0%   { transform: translateY(8px) scale(.7); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: translateY(-26px) scale(1.15); opacity: 0; }
+}
 @keyframes rpgDropFly {
   0%   { transform: translate(0, 0) scale(1); opacity: 1; }
   100% { transform: translate(var(--fly-x, -240px), var(--fly-y, 120px)) scale(.5); opacity: 0; }

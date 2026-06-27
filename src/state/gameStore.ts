@@ -80,6 +80,7 @@ interface GameState {
   endRound: () => void
   advanceCity: () => void
   togglePause: () => void
+  quitToTeacher: () => void
 
   goTeacher: () => void
   goHome: () => void
@@ -463,6 +464,10 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   togglePause: () => set({ paused: !get().paused }),
+
+  /** End the current round mid-play and return to the teacher page (progress is
+   *  already auto-saved per answer). */
+  quitToTeacher: () => set({ phase: 'teacher', paused: false, currentPlayer: null }),
 
   goTeacher: () => set({ phase: 'teacher' }),
   goHome: () => set({ phase: 'teacher' }),
