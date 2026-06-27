@@ -6,6 +6,7 @@ import type { CityMeta } from '../lib/cities'
 import { getApiUrl, setApiUrl } from '../lib/config'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
 import { Modal } from '../ds/shell/Modal'
+import { TaiwanBackdrop } from '../ds/shell/TaiwanBackdrop'
 import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 
 /** 老師操作頁 — the hub shown before a game and after every round ends. */
@@ -40,9 +41,10 @@ export function HomeScreen() {
   const sortedSaves = [...campaigns].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div style={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <TaiwanBackdrop />
       {/* top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(4px)' }}>
         <Logo />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Button variant="ghost" iconLeft={<BarChart3 size={20} />} onClick={goReport}>老師報表</Button>
@@ -52,7 +54,7 @@ export function HomeScreen() {
       </div>
 
       {regions.length === 0 ? (
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: 36 }}>
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'grid', placeItems: 'center', padding: 36 }}>
           <Card tone="plain" pad="lg" style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'center' }}>
             <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>還沒有題庫</h2>
             <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -63,7 +65,7 @@ export function HomeScreen() {
           </Card>
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, padding: 28, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, padding: 28, overflow: 'hidden' }}>
           {/* left: adventure + save */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0, overflowY: 'auto', paddingRight: 6 }}>
             <div>
