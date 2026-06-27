@@ -6,7 +6,7 @@ import type { CityMeta } from '../lib/cities'
 import { getApiUrl, setApiUrl } from '../lib/config'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
 import { Modal } from '../ds/shell/Modal'
-import { TaiwanBackdrop } from '../ds/shell/TaiwanBackdrop'
+import { WukongCloudBackdrop } from '../ds/shell/WukongCloudBackdrop'
 import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 
 /** 老師操作頁 — the hub shown before a game and after every round ends. */
@@ -42,7 +42,7 @@ export function HomeScreen() {
 
   return (
     <div style={{ height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-      <TaiwanBackdrop />
+      <WukongCloudBackdrop />
       {/* top bar */}
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(4px)' }}>
         <Logo />
