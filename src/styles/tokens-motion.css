@@ -1,0 +1,14 @@
+/* Roam — Motion tokens
+   Mostly quick, snappy ease-out. A gentle bounce is reserved for rewards
+   (score reveal, star pops). Nothing loops forever on game content. */
+
+:root {
+  --ease-out:    cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out: cubic-bezier(.45, 0, .25, 1);
+  --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+
+  --dur-fast: 120ms;
+  --dur-med:  220ms;
+  --dur-slow: 400ms;
+  --dur-reveal: 650ms; /* score / star reveals */
+}

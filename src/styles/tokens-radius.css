@@ -1,0 +1,12 @@
+/* Roam — Corner radius tokens
+   Friendly, rounded — but not bubbly. Big surfaces get bigger radii. */
+
+:root {
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   16px;  /* default card / button */
+  --r-lg:   22px;
+  --r-xl:   28px;  /* hero panels, modals */
+  --r-2xl:  36px;
+  --r-pill: 999px;
+}

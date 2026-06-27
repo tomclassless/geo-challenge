@@ -1,0 +1,66 @@
+/* Roam Design System — global entry point for the geo-quiz app.
+   Tokens + webfonts + the fixed tablet-frame stage. */
+
+/* Webfonts (Google Fonts CDN) */
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;600&display=swap");
+
+@import "./styles/tokens-colors.css";
+@import "./styles/tokens-typography.css";
+@import "./styles/tokens-spacing.css";
+@import "./styles/tokens-radius.css";
+@import "./styles/tokens-shadow.css";
+@import "./styles/tokens-motion.css";
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--gray-200);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* fixed 1100x780 landscape tablet frame, scaled to fit (see main.tsx) */
+#stageWrap {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+#frame {
+  width: 1100px;
+  height: 780px;
+  background: var(--bg);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  transform-origin: center center;
+}
+
+/* reward / error motion (referenced by StarRating + PinInput) */
+@keyframes roamStarPop {
+  0%   { transform: scale(.3); opacity: 0; }
+  70%  { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes roamShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-7px); }
+  40%, 80% { transform: translateX(7px); }
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: var(--fs-title);
+  color: var(--text-muted);
+}

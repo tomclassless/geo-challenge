@@ -1,0 +1,37 @@
+/* Roam — Typography tokens
+   Noto Sans TC carries all Traditional-Chinese UI text.
+   Fredoka is a rounded Latin display face for big numbers / English accents.
+   Roboto Mono is reserved for dense teacher-report tables & IDs.
+   Scales run LARGE — this is a tablet app used by children at arm's length. */
+
+:root {
+  --font-display: "Fredoka", "Noto Sans TC", system-ui, sans-serif;
+  --font-sans:    "Noto Sans TC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "Roboto Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* weights */
+  --w-regular: 400;
+  --w-medium:  500;
+  --w-bold:    700;
+  --w-black:   900;
+
+  /* type scale (px) */
+  --fs-display: 64px;  /* hero numbers: "12 / 18", score reveal */
+  --fs-h1:      40px;
+  --fs-h2:      30px;
+  --fs-h3:      24px;
+  --fs-title:   20px;
+  --fs-body:    18px;  /* base body — generous for kids */
+  --fs-sm:      15px;
+  --fs-xs:      13px;  /* metadata, table labels only */
+
+  /* line heights */
+  --lh-tight:  1.1;
+  --lh-snug:   1.3;
+  --lh-normal: 1.6;
+
+  /* letter spacing */
+  --ls-tight: -0.01em;
+  --ls-normal: 0;
+  --ls-wide:  0.04em;  /* small caps-y labels */
+}

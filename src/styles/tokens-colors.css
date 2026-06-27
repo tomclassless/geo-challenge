@@ -1,0 +1,105 @@
+/* Roam — Color tokens
+   Warm "paper" base + teal brand (sea / exploration) + amber accent (stars / reward).
+   Semantics tuned for a kids' quiz: correct / wrong / unanswered are unambiguous
+   but never harsh. The 4-option quartet is POSITIONAL, never implies correctness. */
+
+:root {
+  /* ---- Brand: Teal (海 / 探索) ---- */
+  --teal-50:  #E8F7F6;
+  --teal-100: #C6ECEA;
+  --teal-200: #94DAD7;
+  --teal-300: #5FC4C0;
+  --teal-400: #33A9A5;
+  --teal-500: #138E8A;  /* primary */
+  --teal-600: #0E7470;
+  --teal-700: #0B5C59;
+  --teal-800: #094644;
+  --teal-900: #063230;
+
+  /* ---- Accent: Amber (星星 / 獎勵) ---- */
+  --amber-50:  #FFF6E5;
+  --amber-100: #FFE9BF;
+  --amber-200: #FFD787;
+  --amber-300: #FBC04C;
+  --amber-400: #F5A524;  /* accent */
+  --amber-500: #E08A0B;
+  --amber-600: #B86E07;
+
+  /* ---- Correct: Green ---- */
+  --green-50:  #E9F8EE;
+  --green-100: #C7EDD3;
+  --green-300: #6FC98C;
+  --green-500: #2E9E5B;
+  --green-600: #23804A;
+  --green-700: #1A6239;
+
+  /* ---- Wrong: Coral-red ---- */
+  --red-50:  #FDECEA;
+  --red-100: #F9CFCB;
+  --red-300: #EF8B85;
+  --red-500: #E0524D;
+  --red-600: #C23B37;
+  --red-700: #9C2C29;
+
+  /* ---- Neutral: warm gray ---- */
+  --gray-0:   #FFFFFF;
+  --gray-50:  #FBF8F3;  /* paper / app background */
+  --gray-100: #F2EEE7;
+  --gray-200: #E5E0D8;
+  --gray-300: #D2CCC2;
+  --gray-400: #ADA79C;
+  --gray-500: #857F75;
+  --gray-600: #615C54;
+  --gray-700: #433F39;
+  --gray-800: #2A2723;
+  --gray-900: #1B1916;
+
+  /* ---- Answer-option quartet (positional, non-semantic) ---- */
+  --opt-coral:  #F2725C;
+  --opt-amber:  #F5A524;
+  --opt-teal:   #2BA8A3;
+  --opt-indigo: #5B72C4;
+
+  /* =========================================================
+     Semantic aliases — reference these in components, not the
+     raw ramps above.
+     ========================================================= */
+  --brand:         var(--teal-500);
+  --brand-strong:  var(--teal-600);
+  --brand-press:   var(--teal-700);
+  --brand-soft:    var(--teal-50);
+  --brand-tint:    var(--teal-100);
+
+  --accent:        var(--amber-400);
+  --accent-strong: var(--amber-500);
+  --accent-soft:   var(--amber-50);
+
+  --bg:            var(--gray-50);
+  --surface:       var(--gray-0);
+  --surface-sunken:var(--gray-100);
+  --overlay:       rgba(27, 25, 22, .48);
+
+  --text:          var(--gray-900);
+  --text-muted:    var(--gray-500);
+  --text-subtle:   var(--gray-400);
+  --text-on-brand: #FFFFFF;
+  --text-on-accent:#3A2A06;
+
+  --border:        var(--gray-200);
+  --border-strong: var(--gray-300);
+
+  /* result states (shared by game + teacher report) */
+  --correct:       var(--green-500);
+  --correct-bg:    var(--green-50);
+  --correct-line:  var(--green-100);
+  --wrong:         var(--red-500);
+  --wrong-bg:      var(--red-50);
+  --wrong-line:    var(--red-100);
+  --unanswered:    var(--gray-400);
+  --unanswered-bg: var(--gray-100);
+
+  /* countdown timer */
+  --timer-fill:    var(--amber-400);
+  --timer-track:   var(--gray-200);
+  --timer-danger:  var(--red-500);
+}
