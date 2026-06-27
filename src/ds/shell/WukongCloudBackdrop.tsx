@@ -1,8 +1,10 @@
 /**
- * Original pixel-art backdrop: 孫悟空 riding his golden somersault cloud (筋斗雲)
- * across a pixel sky. Fully hand-drawn from a pixel grid (no copyrighted art),
- * animated with SMIL — the hero bobs and background clouds drift. Purely
- * decorative (pointer-events: none); sits behind the teacher-page content.
+ * Original pixel-art backdrop for the teacher page:
+ *  - a soft pixel sky with drifting clouds (fills the page, behind the UI)
+ *  - 孫悟空 on his golden somersault cloud (筋斗雲) as a small, crisp mascot that
+ *    zig-zags around the page (亂飛) and waves his 金箍棒.
+ * Fully hand-drawn from a pixel grid (no copyrighted art). Decorative only
+ * (pointer-events: none).
  */
 
 const U = 7 // pixel size
@@ -64,59 +66,55 @@ function PxCloud({ scale = 1, color = '#FFFFFF' }: { scale?: number; color?: str
 
 export function WukongCloudBackdrop() {
   return (
-    <svg
-      viewBox="0 0 320 200"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
-    >
-      <defs>
-        <linearGradient id="wsky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#BFE6F7" />
-          <stop offset="100%" stopColor="#EAF6FD" />
-        </linearGradient>
-      </defs>
+    <>
+      {/* sky + drifting clouds — fills the page, behind everything */}
+      <svg
+        viewBox="0 0 320 200"
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
+      >
+        <defs>
+          <linearGradient id="wsky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#BFE6F7" />
+            <stop offset="100%" stopColor="#EAF6FD" />
+          </linearGradient>
+        </defs>
+        <rect width="320" height="200" fill="url(#wsky)" />
+        <g shapeRendering="crispEdges">
+          <rect x="282" y="16" width="22" height="22" fill="#FBD24B" />
+          <rect x="278" y="21" width="30" height="12" fill="#FBD24B" />
+          <rect x="286" y="20" width="14" height="14" fill="#FFE99B" />
+        </g>
+        <g opacity="0.85"><PxCloud scale={0.8} />
+          <animateTransform attributeName="transform" type="translate" values="340 26; -120 26" dur="24s" repeatCount="indefinite" />
+        </g>
+        <g opacity="0.7"><PxCloud scale={1.1} />
+          <animateTransform attributeName="transform" type="translate" values="360 150; -160 150" dur="32s" repeatCount="indefinite" />
+        </g>
+        <g opacity="0.6"><PxCloud scale={0.6} />
+          <animateTransform attributeName="transform" type="translate" values="320 92; -100 92" dur="19s" repeatCount="indefinite" />
+        </g>
+      </svg>
 
-      {/* sky */}
-      <rect width="320" height="200" fill="url(#wsky)" />
-
-      {/* pixel sun */}
-      <g shapeRendering="crispEdges">
-        <rect x="280" y="16" width="24" height="24" fill="#FBD24B" />
-        <rect x="276" y="22" width="32" height="12" fill="#FBD24B" />
-        <rect x="284" y="20" width="16" height="16" fill="#FFE99B" />
-      </g>
-
-      {/* drifting background clouds */}
-      <g opacity="0.85">
-        <PxCloud scale={0.8} color="#FFFFFF" />
-        <animateTransform attributeName="transform" type="translate" values="340 26; -120 26" dur="24s" repeatCount="indefinite" />
-      </g>
-      <g opacity="0.7">
-        <PxCloud scale={1.1} color="#FFFFFF" />
-        <animateTransform attributeName="transform" type="translate" values="360 150; -160 150" dur="32s" repeatCount="indefinite" />
-      </g>
-      <g opacity="0.6">
-        <PxCloud scale={0.6} color="#FFFFFF" />
-        <animateTransform attributeName="transform" type="translate" values="320 86; -100 86" dur="19s" repeatCount="indefinite" />
-      </g>
-
-      {/* hero: 孫悟空 on the golden somersault cloud */}
-      <g transform="translate(98 34)">
-        <g>
-          {/* bob up & down */}
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 0; 0 -6; 0 0"
-            keyTimes="0;0.5;1"
-            calcMode="spline"
-            keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
-            dur="3.2s"
-            repeatCount="indefinite"
-          />
-
-          {/* golden cloud (筋斗雲) */}
+      {/* the flying 孫悟空 mascot — small & crisp, zig-zags around the page */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          zIndex: 2,
+          width: 132,
+          pointerEvents: 'none',
+          animation: 'wkFly 18s ease-in-out infinite',
+          filter: 'drop-shadow(0 6px 6px rgba(60,60,90,0.22))'
+        }}
+      >
+        <svg
+          viewBox="-21 -8 147 156"
+          width="132"
+          style={{ display: 'block', imageRendering: 'pixelated' }}
+        >
+          {/* golden somersault cloud (筋斗雲) */}
           <g shapeRendering="crispEdges">
             <rect x={-3 * U} y={14 * U} width={21 * U} height={3 * U} fill="#F4DC82" />
             <rect x={-2 * U} y={13 * U} width={5 * U} height={U} fill="#F4DC82" />
@@ -126,16 +124,30 @@ export function WukongCloudBackdrop() {
             <rect x={-3 * U} y={17 * U} width={21 * U} height={U} fill="#E6C766" />
           </g>
 
-          {/* staff 金箍棒 */}
-          <g transform={`translate(${7 * U} ${10.5 * U}) rotate(-38)`} shapeRendering="crispEdges">
-            <rect x={-1.4 * U} y={-0.4 * U} width={6.5 * U} height={0.8 * U} fill="#E8C24B" />
-            <rect x={-1.6 * U} y={-0.6 * U} width={0.6 * U} height={1.2 * U} fill="#8B5A2B" />
-            <rect x={4.5 * U} y={-0.6 * U} width={0.6 * U} height={1.2 * U} fill="#8B5A2B" />
-          </g>
-
           <SpritePixels />
-        </g>
-      </g>
-    </svg>
+
+          {/* staff 金箍棒 — waves up and down */}
+          <g transform={`translate(${10 * U} ${10 * U})`}>
+            <g>
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                values="-55;-8;-55"
+                keyTimes="0;0.5;1"
+                calcMode="spline"
+                keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
+                dur="1.2s"
+                repeatCount="indefinite"
+              />
+              <g shapeRendering="crispEdges">
+                <rect x={-0.5 * U} y={-0.5 * U} width={7 * U} height={U} fill="#E8C24B" />
+                <rect x={-0.7 * U} y={-0.8 * U} width={0.7 * U} height={1.6 * U} fill="#8B5A2B" />
+                <rect x={5.8 * U} y={-0.8 * U} width={0.7 * U} height={1.6 * U} fill="#8B5A2B" />
+              </g>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </>
   )
 }

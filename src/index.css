@@ -93,3 +93,14 @@ body {
   0%, 100% { box-shadow: 0 0 0 0 var(--glow, rgba(255,255,255,.4)); }
   50%      { box-shadow: 0 0 36px 10px var(--glow, rgba(255,255,255,.4)); }
 }
+
+/* 孫悟空 mascot zig-zagging across the teacher page (筋斗雲亂飛) */
+@keyframes wkFly {
+  0%   { left: 3%;  top: 12%; transform: rotate(-6deg) scaleX(1); }
+  16%  { left: 64%; top: 5%;  transform: rotate(6deg) scaleX(1); }
+  33%  { left: 82%; top: 46%; transform: rotate(-4deg) scaleX(-1); }
+  50%  { left: 46%; top: 66%; transform: rotate(8deg) scaleX(-1); }
+  67%  { left: 10%; top: 50%; transform: rotate(-7deg) scaleX(1); }
+  84%  { left: 28%; top: 22%; transform: rotate(5deg) scaleX(1); }
+  100% { left: 3%;  top: 12%; transform: rotate(-6deg) scaleX(1); }
+}
