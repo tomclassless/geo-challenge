@@ -64,10 +64,10 @@ export function HomeScreen() {
       ) : (
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, padding: 28, overflow: 'hidden' }}>
           {/* left: adventure + save */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0, overflowY: 'auto', paddingRight: 6 }}>
             <div>
               <span style={{ fontWeight: 700, fontSize: 'var(--fs-xs)', letterSpacing: 'var(--ls-wide)', color: 'var(--text-muted)' }}>冒險主題</span>
-              <h1 style={{ margin: '6px 0 0', fontWeight: 900, fontSize: 40, lineHeight: 1.15 }}>
+              <h1 style={{ margin: '4px 0 0', fontWeight: 900, fontSize: 30, lineHeight: 1.15 }}>
                 {WUKONG_EMOJI} 孫悟空逃離如來佛祖掌心 {BUDDHA_EMOJI}
               </h1>
               <p style={{ margin: '8px 0 0', color: 'var(--text-muted)' }}>
@@ -107,7 +107,7 @@ export function HomeScreen() {
             </Card>
 
             {/* save record + start/continue */}
-            <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 'auto' }}>
+            <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {campaign && active ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <span style={{ fontSize: 48 }}>{active.meta.general.emoji}</span>
@@ -125,20 +125,19 @@ export function HomeScreen() {
 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {campaign && (
-                  <Button variant="primary" size="xl" iconLeft={<Play size={24} />} onClick={continueCampaign} style={{ flex: 1 }}>
+                  <Button variant="primary" size="lg" iconLeft={<Play size={22} />} onClick={continueCampaign} style={{ flex: '1 1 200px' }}>
                     繼續遊戲（讀取存檔）
                   </Button>
                 )}
-                <Button variant={campaign ? 'secondary' : 'primary'} size="xl" iconLeft={<Sword size={22} />} onClick={onStart} style={{ flex: 1 }}>
+                <Button variant={campaign ? 'secondary' : 'primary'} size="lg" iconLeft={<Sword size={20} />} onClick={onStart} style={{ flex: '1 1 160px' }}>
                   {campaign ? '開始新遊戲' : '開始遊戲'}
                 </Button>
+                {campaign && (
+                  <Button variant="ghost" size="lg" iconLeft={<Trash2 size={20} />} onClick={onDeleteSave} style={{ color: 'var(--wrong)' }}>
+                    刪除存檔
+                  </Button>
+                )}
               </div>
-
-              {campaign && (
-                <Button variant="ghost" iconLeft={<Trash2 size={20} />} onClick={onDeleteSave} style={{ alignSelf: 'flex-start', color: 'var(--wrong)' }}>
-                  刪除存檔
-                </Button>
-              )}
             </Card>
           </div>
 
