@@ -13,7 +13,7 @@ import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 export function HomeScreen() {
   const {
     regions, roster, campaigns, lastSync, pending, online, syncing,
-    sync, loadSample, startCampaign, continueCampaign, deleteSave, goReport, goHistory, goRoster
+    sync, loadSample, startCampaign, continueCampaign, deleteSave, viewSaveReport, goReport, goHistory, goRoster
   } = useGame()
   const cities = useGame(selectPlayableCities)
 
@@ -125,6 +125,7 @@ export function HomeScreen() {
                     save={s}
                     cities={cities}
                     onContinue={() => continueCampaign(s.id)}
+                    onReport={() => viewSaveReport(s.id)}
                     onDelete={() => onDeleteSave(s)}
                   />
                 ))
@@ -184,11 +185,12 @@ export function HomeScreen() {
 }
 
 function SaveRow({
-  save, cities, onContinue, onDelete
+  save, cities, onContinue, onReport, onDelete
 }: {
   save: CampaignState
   cities: CityMeta[]
   onContinue: () => void
+  onReport: () => void
   onDelete: () => void
 }) {
   const meta = cities[Math.min(save.cityIndex, cities.length - 1)]
@@ -200,13 +202,20 @@ function SaveRow({
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)' }}>
-      <span style={{ fontSize: 32 }}>{cleared ? WUKONG_EMOJI : meta?.general.emoji}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800 }}>{save.name}</div>
-        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
-          {meta?.region ?? '—'}・{status}・{save.roster.length} 人
-        </div>
-      </div>
+      {/* tap the info area to view this save's accuracy report */}
+      <button
+        onClick={onReport}
+        title="查看此存檔的答題正確率"
+        style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 12, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, fontFamily: 'var(--font-sans)' }}
+      >
+        <span style={{ fontSize: 32 }}>{cleared ? WUKONG_EMOJI : meta?.general.emoji}</span>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: 'block', fontWeight: 800, color: 'var(--text)' }}>{save.name}</span>
+          <span style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
+            {meta?.region ?? '—'}・{status}・{save.roster.length} 人 · 📊 看正確率
+          </span>
+        </span>
+      </button>
       <Button variant="primary" iconLeft={<Play size={18} />} onClick={onContinue}>繼續</Button>
       <Button variant="ghost" iconLeft={<Trash2 size={18} />} onClick={onDelete} style={{ color: 'var(--wrong)' }}>刪除</Button>
     </div>

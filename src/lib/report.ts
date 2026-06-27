@@ -39,14 +39,20 @@ function labelFor(region: Region | undefined, qid: string): string {
   return text.length > 18 ? text.slice(0, 18) + '…' : text
 }
 
-/** Build the teacher report for one region, optionally limited to one session. */
+/** Build the teacher report for one region, optionally limited to one session
+ *  or to one save (campaignId, which takes precedence over sessionId). */
 export async function buildReport(
   regions: Region[],
   region: string,
-  sessionId: string | null
+  sessionId: string | null,
+  campaignId?: string | null
 ): Promise<ReportData> {
   const all = await getAllResults()
-  const rows = all.filter((r) => r.region === region && (!sessionId || r.sessionId === sessionId))
+  const rows = all.filter(
+    (r) =>
+      r.region === region &&
+      (campaignId ? r.campaignId === campaignId : !sessionId || r.sessionId === sessionId)
+  )
   const reg = regions.find((r) => r.name === region)
 
   // question order follows the bank if available, else first-seen order

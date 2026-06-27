@@ -128,3 +128,9 @@ export async function getAllResults(): Promise<StoredResult[]> {
   const db = await getDB()
   return db.getAll('results')
 }
+
+/** Wipe all stored answer results (resets the teacher report to zero). */
+export async function clearResults(): Promise<void> {
+  const db = await getDB()
+  await db.clear('results')
+}

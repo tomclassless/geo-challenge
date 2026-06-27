@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Lock, ChevronLeft, Clock, Home } from 'lucide-react'
+import { Lock, ChevronLeft, Clock, Home, RotateCcw } from 'lucide-react'
 import { useGame } from '../state/gameStore'
 import { buildReport, type Cell, type ReportData } from '../lib/report'
 import { Stat, AccuracyBar, MatrixCell, Button } from '../ds'
@@ -14,10 +14,11 @@ const CELL_STATE: Record<Cell, MatrixState> = {
 }
 
 export function AccuracyReportScreen() {
-  const { regions, region, sessionId, config, goHistory, goHome } = useGame()
+  const { regions, region, sessionId, config, reportCampaignId, resetStats, goHistory, goHome } = useGame()
   const [scope, setScope] = useState<'session' | 'all'>('session')
   const [view, setView] = useState<'class' | 'matrix'>('class')
   const [data, setData] = useState<ReportData | null>(null)
+  const [refresh, setRefresh] = useState(0)
 
   // built-in PIN gate (replaces the old PinGate modal)
   const [authed, setAuthed] = useState(!config.teacherPin)
@@ -26,8 +27,15 @@ export function AccuracyReportScreen() {
 
   useEffect(() => {
     if (!region) return
-    void buildReport(regions, region, scope === 'session' ? sessionId : null).then(setData)
-  }, [regions, region, sessionId, scope])
+    const session = reportCampaignId ? null : scope === 'session' ? sessionId : null
+    void buildReport(regions, region, session, reportCampaignId).then(setData)
+  }, [regions, region, sessionId, scope, reportCampaignId, refresh])
+
+  const onReset = async () => {
+    if (!window.confirm('確定要把所有答題統計「全部歸零」嗎？此動作會清除本機所有正確率/錯誤率紀錄，無法復原。')) return
+    await resetStats()
+    setRefresh((n) => n + 1)
+  }
 
   const summary = useMemo(() => {
     if (!data || data.stats.length === 0) return null
@@ -64,12 +72,16 @@ export function AccuracyReportScreen() {
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
         <Button variant="ghost" iconLeft={<ChevronLeft size={20} />} onClick={goHome}>首頁</Button>
-        <span style={{ fontWeight: 900, fontSize: 'var(--fs-title)' }}>{region} · 報表</span>
-        <div style={{ display: 'flex', gap: 8, background: 'var(--surface-sunken)', padding: 4, borderRadius: 'var(--r-pill)' }}>
-          {([['session', '本局'], ['all', '全部']] as const).map(([k, label]) => (
-            <Pill key={k} active={scope === k} onClick={() => setScope(k)}>{label}</Pill>
-          ))}
-        </div>
+        <span style={{ fontWeight: 900, fontSize: 'var(--fs-title)' }}>
+          {region} · 報表{reportCampaignId ? '（此存檔）' : ''}
+        </span>
+        {!reportCampaignId && (
+          <div style={{ display: 'flex', gap: 8, background: 'var(--surface-sunken)', padding: 4, borderRadius: 'var(--r-pill)' }}>
+            {([['session', '本局'], ['all', '全部']] as const).map(([k, label]) => (
+              <Pill key={k} active={scope === k} onClick={() => setScope(k)}>{label}</Pill>
+            ))}
+          </div>
+        )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, background: 'var(--surface-sunken)', padding: 4, borderRadius: 'var(--r-pill)' }}>
           {([['class', '全班正確率'], ['matrix', '對錯對照表']] as const).map(([k, label]) => (
             <Pill key={k} active={view === k} onClick={() => setView(k)}>{label}</Pill>
@@ -149,6 +161,9 @@ export function AccuracyReportScreen() {
       <div style={{ display: 'flex', gap: 10, padding: '16px 32px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
         <Button variant="primary" iconLeft={<Home size={20} />} onClick={goHome}>回老師頁</Button>
         <Button variant="ghost" iconLeft={<Clock size={20} />} onClick={goHistory}>看歷史</Button>
+        <Button variant="ghost" iconLeft={<RotateCcw size={20} />} onClick={() => void onReset()} style={{ marginLeft: 'auto', color: 'var(--wrong)' }}>
+          全部歸零重新計算
+        </Button>
       </div>
     </div>
   )

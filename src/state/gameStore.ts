@@ -9,7 +9,7 @@ import { SAMPLE_BANKS } from '../lib/sampleData'
 import { CITIES, findCity, type CityMeta } from '../lib/cities'
 import { adoptApiFromUrl } from '../lib/config'
 import {
-  addResults, deleteCampaign, getLastSync, getUnsynced, listCampaigns, loadBanks,
+  addResults, clearResults, deleteCampaign, getLastSync, getUnsynced, listCampaigns, loadBanks,
   loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster, takeLegacyCampaign
 } from '../lib/offlineStore'
 
@@ -52,6 +52,8 @@ interface GameState {
   phase: Phase
   region: string | null
   sessionId: string | null
+  /** when set, the report is scoped to this one save */
+  reportCampaignId: string | null
 
   // active turn
   currentPlayer: string | null
@@ -89,6 +91,8 @@ interface GameState {
   goRoster: () => void
   goReport: () => void
   goHistory: () => void
+  viewSaveReport: (id: string) => void
+  resetStats: () => Promise<void>
 }
 
 // ---- helpers ----
@@ -164,6 +168,7 @@ export const useGame = create<GameState>((set, get) => ({
   phase: 'teacher',
   region: null,
   sessionId: null,
+  reportCampaignId: null,
 
   currentPlayer: null,
   turnQueue: [],
@@ -397,7 +402,8 @@ export const useGame = create<GameState>((set, get) => ({
       playerName: currentPlayer,
       questionId: q.id,
       chosen: optionIndex !== null ? q.options[optionIndex] : '',
-      correct
+      correct,
+      campaignId: campaign.id
     }
     await addResults([row])
 
@@ -500,9 +506,24 @@ export const useGame = create<GameState>((set, get) => ({
   goReport: () => {
     const { region, regions, campaign } = get()
     const r = region ?? activeCity(regions, campaign)?.region.name ?? regions[0]?.name ?? null
-    set({ region: r, phase: 'report' })
+    set({ region: r, reportCampaignId: null, phase: 'report' })
   },
-  goHistory: () => set({ phase: 'history' })
+  goHistory: () => set({ phase: 'history' }),
+
+  /** Open the report scoped to one saved game (its city + that save's answers). */
+  viewSaveReport: (id) => {
+    const { campaigns, regions } = get()
+    const save = campaigns.find((c) => c.id === id)
+    if (!save) return
+    const ac = activeCity(regions, save)
+    set({ region: ac?.region.name ?? null, reportCampaignId: id, phase: 'report' })
+  },
+
+  /** Wipe all answer results so the report recalculates from zero. */
+  resetStats: async () => {
+    await clearResults()
+    set({ pending: await pendingCount() })
+  }
 }))
 
 function stripStored(r: { synced: 0 | 1; key: number } & AnswerResult): AnswerResult {

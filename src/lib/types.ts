@@ -52,6 +52,8 @@ export interface AnswerResult {
   /** chosen option text, or '' if timed out / unanswered */
   chosen: string
   correct: boolean
+  /** which save (campaign) this answer belongs to — lets the report scope to one save */
+  campaignId?: string
 }
 
 // ---- RPG campaign save ----
