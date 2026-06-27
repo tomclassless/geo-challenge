@@ -13,6 +13,19 @@ function scaleFrame() {
 window.addEventListener('resize', scaleFrame)
 scaleFrame()
 
+// When a new version's service worker takes control, reload once so the device
+// always runs the latest build (avoids being stuck on a cached old version).
+if ('serviceWorker' in navigator) {
+  let hadController = !!navigator.serviceWorker.controller
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) {
+      hadController = true // first install on this device — no reload needed
+      return
+    }
+    window.location.reload()
+  })
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
