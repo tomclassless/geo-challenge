@@ -48,21 +48,40 @@ export async function getLastSync(): Promise<string | null> {
   return ((await db.get('kv', 'lastSync')) as string | undefined) ?? null
 }
 
-// ---- RPG campaign save & roster (key-value) ----
+// ---- RPG campaign saves & roster (key-value) ----
+// Saves are kept as a list under one key so the teacher can manage several
+// games (e.g. different classes) and delete them individually.
 
+const SAVES_KEY = 'campaigns'
+
+export async function listCampaigns(): Promise<CampaignState[]> {
+  const db = await getDB()
+  return ((await db.get('kv', SAVES_KEY)) as CampaignState[] | undefined) ?? []
+}
+
+/** Insert or update a save by id. */
 export async function saveCampaign(c: CampaignState): Promise<void> {
   const db = await getDB()
-  await db.put('kv', c, 'campaign')
+  const list = await listCampaigns()
+  const i = list.findIndex((x) => x.id === c.id)
+  if (i >= 0) list[i] = c
+  else list.push(c)
+  await db.put('kv', list, SAVES_KEY)
 }
 
-export async function loadCampaign(): Promise<CampaignState | null> {
+export async function deleteCampaign(id: string): Promise<void> {
   const db = await getDB()
-  return ((await db.get('kv', 'campaign')) as CampaignState | undefined) ?? null
+  const list = (await listCampaigns()).filter((x) => x.id !== id)
+  await db.put('kv', list, SAVES_KEY)
 }
 
-export async function clearCampaign(): Promise<void> {
+/** One-time migration: pull a pre-multi-save single 'campaign' record, if any. */
+export async function takeLegacyCampaign(): Promise<CampaignState | null> {
   const db = await getDB()
+  const old = (await db.get('kv', 'campaign')) as CampaignState | undefined
+  if (!old) return null
   await db.delete('kv', 'campaign')
+  return old
 }
 
 export async function saveRoster(names: string[]): Promise<void> {

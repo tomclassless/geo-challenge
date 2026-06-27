@@ -77,6 +77,10 @@ export interface CampaignCityState {
 
 /** The whole adventure save — one game in progress. */
 export interface CampaignState {
+  /** Unique id for this save slot. */
+  id: string
+  /** Display name (auto: 建立日期時間). */
+  name: string
   roster: string[]
   /** Index into CITIES (play order). */
   cityIndex: number

@@ -8,8 +8,8 @@ import { fetchBanks, pushResults } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
 import { CITIES, findCity, type CityMeta } from '../lib/cities'
 import {
-  addResults, clearCampaign, getLastSync, getUnsynced, loadBanks, loadCampaign,
-  loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster
+  addResults, deleteCampaign, getLastSync, getUnsynced, listCampaigns, loadBanks,
+  loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster, takeLegacyCampaign
 } from '../lib/offlineStore'
 
 export type Phase =
@@ -46,6 +46,7 @@ interface GameState {
   online: boolean
   syncing: boolean
 
+  campaigns: CampaignState[]
   campaign: CampaignState | null
   phase: Phase
   region: string | null
@@ -66,8 +67,8 @@ interface GameState {
   setRoster: (names: string[]) => Promise<void>
 
   startCampaign: () => Promise<void>
-  continueCampaign: () => void
-  clearSave: () => Promise<void>
+  continueCampaign: (id: string) => void
+  deleteSave: (id: string) => Promise<void>
 
   beginRound: () => void
   nextTurn: () => void
@@ -91,6 +92,25 @@ interface GameState {
 
 function newSessionId(): string {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7)
+}
+
+function newId(): string {
+  return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+}
+
+/** Auto save name from creation time, e.g. 「6/27 下午3:45 存檔」. */
+function formatSaveName(d: Date): string {
+  const date = d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
+  const time = d.toLocaleTimeString('zh-TW', { hour: 'numeric', minute: '2-digit' })
+  return `${date} ${time} 存檔`
+}
+
+function upsertCampaign(list: CampaignState[], c: CampaignState): CampaignState[] {
+  const i = list.findIndex((x) => x.id === c.id)
+  if (i < 0) return [...list, c]
+  const next = [...list]
+  next[i] = c
+  return next
 }
 
 /** Cities that have a matching question bank, in play order. */
@@ -136,6 +156,7 @@ export const useGame = create<GameState>((set, get) => ({
   online: navigator.onLine,
   syncing: false,
 
+  campaigns: [],
   campaign: null,
   phase: 'teacher',
   region: null,
@@ -151,7 +172,15 @@ export const useGame = create<GameState>((set, get) => ({
 
   init: async () => {
     const banks = await loadBanks()
-    const campaign = await loadCampaign()
+    let campaigns = await listCampaigns()
+    // migrate a pre-multi-save single record, if present
+    const legacy = await takeLegacyCampaign()
+    if (legacy) {
+      if (!legacy.id) legacy.id = newId()
+      if (!legacy.name) legacy.name = formatSaveName(new Date(legacy.startedAt || Date.now()))
+      await saveCampaign(legacy)
+      campaigns = upsertCampaign(campaigns, legacy)
+    }
     const savedRoster = await loadRoster()
     window.addEventListener('online', () => set({ online: true }))
     window.addEventListener('offline', () => set({ online: false }))
@@ -161,7 +190,8 @@ export const useGame = create<GameState>((set, get) => ({
       players: banks?.players ?? [],
       roster: savedRoster ?? banks?.players ?? [],
       config: banks?.config ?? DEFAULT_CONFIG,
-      campaign,
+      campaigns,
+      campaign: null,
       lastSync: await getLastSync(),
       pending: await pendingCount(),
       online: navigator.onLine,
@@ -214,10 +244,13 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   startCampaign: async () => {
-    const { roster, regions } = get()
+    const { roster, regions, campaigns } = get()
     if (!getPlayableCities(regions).length || !roster.length) return
-    const now = new Date().toISOString()
+    const d = new Date()
+    const now = d.toISOString()
     const campaign: CampaignState = {
+      id: newId(),
+      name: formatSaveName(d),
       roster: [...roster],
       cityIndex: 0,
       cities: {},
@@ -228,20 +261,24 @@ export const useGame = create<GameState>((set, get) => ({
     }
     await saveCampaign(campaign)
     const ac = activeCity(regions, campaign)
-    set({ campaign, region: ac?.region.name ?? null, phase: 'cityIntro' })
+    set({ campaign, campaigns: upsertCampaign(campaigns, campaign), region: ac?.region.name ?? null, phase: 'cityIntro' })
   },
 
-  continueCampaign: () => {
-    const { campaign, regions } = get()
+  continueCampaign: (id) => {
+    const { campaigns, regions } = get()
+    const campaign = campaigns.find((c) => c.id === id)
     if (!campaign) return
     const ac = activeCity(regions, campaign)
-    if (!ac) { set({ phase: 'gameWon' }); return }
-    set({ region: ac.region.name, phase: 'cityIntro' })
+    set({ campaign, region: ac?.region.name ?? null, phase: ac ? 'cityIntro' : 'gameWon' })
   },
 
-  clearSave: async () => {
-    await clearCampaign()
-    set({ campaign: null })
+  deleteSave: async (id) => {
+    await deleteCampaign(id)
+    const { campaign, campaigns } = get()
+    set({
+      campaigns: campaigns.filter((c) => c.id !== id),
+      campaign: campaign?.id === id ? null : campaign
+    })
   },
 
   beginRound: () => {
@@ -348,6 +385,7 @@ export const useGame = create<GameState>((set, get) => ({
 
     set({
       campaign: { ...campaign },
+      campaigns: upsertCampaign(get().campaigns, campaign),
       turnCorrect: get().turnCorrect + (dropped ? 1 : 0),
       pending: await pendingCount()
     })
@@ -383,6 +421,7 @@ export const useGame = create<GameState>((set, get) => ({
     void saveCampaign(campaign)
     set({
       campaign: { ...campaign },
+      campaigns: upsertCampaign(get().campaigns, campaign),
       lastResult,
       phase: cs.cleared ? 'cityCleared' : 'turnResult'
     })
@@ -400,7 +439,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (ac) ensureCityState(campaign, ac.meta.region).round += 1
     campaign.updatedAt = new Date().toISOString()
     void saveCampaign(campaign)
-    set({ campaign: { ...campaign }, currentPlayer: null, phase: 'roundEnd' })
+    set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign), currentPlayer: null, phase: 'roundEnd' })
   },
 
   advanceCity: () => {
@@ -411,11 +450,12 @@ export const useGame = create<GameState>((set, get) => ({
     campaign.cityIndex += 1
     campaign.updatedAt = new Date().toISOString()
     void saveCampaign(campaign)
+    const campaigns = upsertCampaign(get().campaigns, campaign)
     if (campaign.cityIndex >= getPlayableCities(regions).length) {
-      set({ campaign: { ...campaign }, phase: 'gameWon' })
+      set({ campaign: { ...campaign }, campaigns, phase: 'gameWon' })
     } else {
       const next = activeCity(regions, campaign)
-      set({ campaign: { ...campaign }, region: next?.region.name ?? null, phase: 'cityIntro' })
+      set({ campaign: { ...campaign }, campaigns, region: next?.region.name ?? null, phase: 'cityIntro' })
     }
   },
 

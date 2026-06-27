@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2 } from 'lucide-react'
-import { useGame, selectActiveCity, selectPlayableCities } from '../state/gameStore'
+import { useGame, selectPlayableCities } from '../state/gameStore'
+import type { CampaignState } from '../lib/types'
+import type { CityMeta } from '../lib/cities'
 import { getApiUrl, setApiUrl } from '../lib/config'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
 import { Modal } from '../ds/shell/Modal'
@@ -9,10 +11,9 @@ import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 /** 老師操作頁 — the hub shown before a game and after every round ends. */
 export function HomeScreen() {
   const {
-    regions, roster, campaign, lastSync, pending, online, syncing,
-    sync, loadSample, startCampaign, continueCampaign, clearSave, goReport, goHistory, goRoster
+    regions, roster, campaigns, lastSync, pending, online, syncing,
+    sync, loadSample, startCampaign, continueCampaign, deleteSave, goReport, goHistory, goRoster
   } = useGame()
-  const active = useGame(selectActiveCity)
   const cities = useGame(selectPlayableCities)
 
   const [showSettings, setShowSettings] = useState(false)
@@ -26,17 +27,17 @@ export function HomeScreen() {
 
   const onStart = () => {
     if (!roster.length) { goRoster(); return }
-    if (campaign && !window.confirm('已有存檔，開始新遊戲會覆蓋目前進度，確定嗎？')) return
     void startCampaign()
   }
 
-  const clearedCount = campaign ? cities.filter((c) => campaign.cities[c.region]?.cleared).length : 0
-
-  const onDeleteSave = () => {
-    if (window.confirm('確定要刪除目前的存檔嗎？此動作無法復原（玩家答題的雲端統計不受影響）。')) {
-      void clearSave()
+  const onDeleteSave = (s: CampaignState) => {
+    if (window.confirm(`確定要刪除存檔「${s.name}」嗎？此動作無法復原（玩家答題的雲端統計不受影響）。`)) {
+      void deleteSave(s.id)
     }
   }
+
+  // newest saves first
+  const sortedSaves = [...campaigns].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -75,69 +76,43 @@ export function HomeScreen() {
               </p>
             </div>
 
-            {/* six-city path */}
-            <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>
-                六都進度{campaign ? `（已通關 ${clearedCount}/${cities.length}）` : ''}
-              </span>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {cities.map((c, i) => {
-                  const cs = campaign?.cities[c.region]
-                  const isCurrent = active?.meta.region === c.region
-                  return (
-                    <div key={c.region} style={{
-                      flex: '1 1 140px', padding: '10px 12px', borderRadius: 'var(--r-md)',
-                      border: isCurrent ? `3px solid ${c.general.color}` : '2px solid var(--border)',
-                      background: cs?.cleared ? 'var(--correct-bg)' : 'var(--surface)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 26 }}>{c.general.emoji}</span>
-                        <div style={{ lineHeight: 1.2 }}>
-                          <div style={{ fontWeight: 800 }}>{i + 1}. {c.region}</div>
-                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{c.general.name} · {c.specialty.emoji}{c.specialty.name}</div>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: 6, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-xs)', fontWeight: 700, color: cs?.cleared ? 'var(--green-700)' : 'var(--text-muted)' }}>
-                        {cs?.cleared ? '✓ 已通關' : cs ? `特產 ${cs.collected}/${campaign!.target}・第${cs.round}局` : '尚未開始'}
-                      </div>
+            {/* six-city overview (static) */}
+            <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>六都關卡與天兵</span>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {cities.map((c, i) => (
+                  <div key={c.region} style={{ flex: '1 1 140px', padding: '8px 10px', borderRadius: 'var(--r-md)', border: '2px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 24 }}>{c.general.emoji}</span>
+                    <div style={{ lineHeight: 1.2 }}>
+                      <div style={{ fontWeight: 800, fontSize: 'var(--fs-sm)' }}>{i + 1}. {c.region}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{c.general.name} · {c.specialty.emoji}{c.specialty.name}</div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             </Card>
 
-            {/* save record + start/continue */}
-            <Card tone="plain" pad="lg" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {campaign && active ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontSize: 48 }}>{active.meta.general.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 900, fontSize: 'var(--fs-title)' }}>存檔：{active.meta.region}・第 {active.round} 局</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
-                      已蒐集 {active.collected}/{active.target} 個{active.meta.specialty.name}・參與者 {campaign.roster.length} 人
-                    </div>
-                  </div>
-                  <Badge tone="brand" soft>{WUKONG_EMOJI} 進行中</Badge>
-                </div>
-              ) : (
-                <div style={{ color: 'var(--text-muted)' }}>還沒有存檔。先設定參與者名單，再開始新遊戲。</div>
-              )}
+            {/* start new game */}
+            <Button variant="primary" size="lg" block iconLeft={<Sword size={20} />} onClick={onStart}>
+              {roster.length ? '開始新遊戲（建立新存檔）' : '先設定參與者名單'}
+            </Button>
 
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {campaign && (
-                  <Button variant="primary" size="lg" iconLeft={<Play size={22} />} onClick={continueCampaign} style={{ flex: '1 1 200px' }}>
-                    繼續遊戲（讀取存檔）
-                  </Button>
-                )}
-                <Button variant={campaign ? 'secondary' : 'primary'} size="lg" iconLeft={<Sword size={20} />} onClick={onStart} style={{ flex: '1 1 160px' }}>
-                  {campaign ? '開始新遊戲' : '開始遊戲'}
-                </Button>
-                {campaign && (
-                  <Button variant="ghost" size="lg" iconLeft={<Trash2 size={20} />} onClick={onDeleteSave} style={{ color: 'var(--wrong)' }}>
-                    刪除存檔
-                  </Button>
-                )}
-              </div>
+            {/* saves list */}
+            <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>存檔紀錄（{sortedSaves.length}）</span>
+              {sortedSaves.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>還沒有存檔。設定名單後按上面「開始新遊戲」就會建立一個。</div>
+              ) : (
+                sortedSaves.map((s) => (
+                  <SaveRow
+                    key={s.id}
+                    save={s}
+                    cities={cities}
+                    onContinue={() => continueCampaign(s.id)}
+                    onDelete={() => onDeleteSave(s)}
+                  />
+                ))
+              )}
             </Card>
           </div>
 
@@ -188,6 +163,37 @@ export function HomeScreen() {
       )}
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+    </div>
+  )
+}
+
+function SaveRow({
+  save, cities, onContinue, onDelete
+}: {
+  save: CampaignState
+  cities: CityMeta[]
+  onContinue: () => void
+  onDelete: () => void
+}) {
+  const cleared = cities.filter((c) => save.cities[c.region]?.cleared).length
+  const done = save.cityIndex >= cities.length
+  const meta = cities[Math.min(save.cityIndex, cities.length - 1)]
+  const cs = meta ? save.cities[meta.region] : undefined
+  const status = done
+    ? '🏆 全破關'
+    : `目前：${meta?.region ?? '—'}・第 ${cs?.round ?? 1} 局・${meta?.specialty.emoji ?? ''}${cs?.collected ?? 0}/${save.target}`
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <span style={{ fontSize: 32 }}>{done ? WUKONG_EMOJI : meta?.general.emoji}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 800 }}>{save.name}</div>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
+          {status}・已通關 {cleared}/{cities.length}・{save.roster.length} 人
+        </div>
+      </div>
+      <Button variant="primary" iconLeft={<Play size={18} />} onClick={onContinue}>繼續</Button>
+      <Button variant="ghost" iconLeft={<Trash2 size={18} />} onClick={onDelete} style={{ color: 'var(--wrong)' }}>刪除</Button>
     </div>
   )
 }
