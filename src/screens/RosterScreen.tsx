@@ -33,45 +33,52 @@ export function RosterScreen() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+      {/* header — save actions live here so the keyboard never hides them */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
         <Button variant="ghost" iconLeft={<ChevronLeft size={20} />} onClick={goTeacher}>返回</Button>
         <span style={{ fontWeight: 900, fontSize: 'var(--fs-title)' }}>參與者名單</span>
-        <Badge tone="brand" soft style={{ marginLeft: 'auto' }}>{names.length} 人</Badge>
+        <Badge tone="brand" soft>{names.length} 人</Badge>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Button variant="primary" iconLeft={<Save size={20} />} onClick={() => void save()} disabled={!names.length || busy}>
+            儲存（這台）
+          </Button>
+          <Button variant="accent" iconLeft={<CloudUpload size={20} />} onClick={() => void saveCloud()} disabled={!names.length || busy || !online}>
+            {busy ? '更新中…' : '儲存並更新雲端'}
+          </Button>
+        </div>
       </div>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, padding: 28, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 }}>
+      {message && (
+        <div style={{ padding: '8px 24px', background: 'var(--brand-soft)', color: 'var(--brand-strong)', fontWeight: 700, fontSize: 'var(--fs-sm)' }}>{message}</div>
+      )}
+
+      {/* scrollable body */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, padding: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
-            一行一個名字（建議 20 人以上，這樣才湊得滿 60 個特產通關）
+            一行一個名字（建議 20 人以上）。「儲存並更新雲端」會讓所有裝置共用這份名單。
           </span>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={'小明\n小華\n阿志\n…'}
             style={{
-              flex: 1, resize: 'none', fontSize: 'var(--fs-body)', lineHeight: 1.7,
+              minHeight: 300, resize: 'vertical', fontSize: 'var(--fs-body)', lineHeight: 1.7,
               padding: 16, border: '2px solid var(--border-strong)', borderRadius: 'var(--r-md)',
-              fontFamily: 'var(--font-sans)', minHeight: 0
+              fontFamily: 'var(--font-sans)'
             }}
           />
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Button variant="primary" size="lg" iconLeft={<Save size={20} />} onClick={() => void save()} disabled={!names.length || busy}>
-              儲存名單（這台）
-            </Button>
-            <Button variant="accent" size="lg" iconLeft={<CloudUpload size={20} />} onClick={() => void saveCloud()} disabled={!names.length || busy || !online}>
-              {busy ? '更新中…' : '儲存並更新雲端（所有裝置共用）'}
-            </Button>
             {players.length > 0 && (
-              <Button variant="ghost" size="lg" iconLeft={<Users size={20} />} onClick={() => setText(players.join('\n'))}>
+              <Button variant="ghost" iconLeft={<Users size={20} />} onClick={() => setText(players.join('\n'))}>
                 帶入雲端名單（{players.length} 人）
               </Button>
             )}
           </div>
-          {message && <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{message}</p>}
           {!online && <p style={{ margin: 0, fontSize: 'var(--fs-xs)', color: 'var(--text-subtle)' }}>（離線中，無法更新雲端；可先存這台）</p>}
         </div>
 
-        <div style={{ overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface)', padding: 16 }}>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface)', padding: 16, minHeight: 0 }}>
           <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: 'var(--fs-sm)', marginBottom: 10 }}>預覽</div>
           {names.length === 0 ? (
             <div style={{ color: 'var(--text-subtle)' }}>尚未輸入名字。</div>
