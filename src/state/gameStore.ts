@@ -217,10 +217,14 @@ export const useGame = create<GameState>((set, get) => ({
       }
       const banks = await fetchBanks()
       await saveBanks(banks)
+      const curRoster = get().roster
+      const nextRoster = curRoster.length ? curRoster : banks.players
+      if (!curRoster.length && banks.players.length) await saveRoster(banks.players)
       set({
         regions: banks.regions,
         players: banks.players,
         config: banks.config ?? DEFAULT_CONFIG,
+        roster: nextRoster,
         lastSync: await getLastSync(),
         pending: await pendingCount()
       })
