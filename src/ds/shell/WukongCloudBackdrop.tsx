@@ -1,57 +1,9 @@
+import { PixelWukong } from '../game/PixelSprites'
+
 /**
- * Original pixel-art backdrop for the teacher page:
- *  - a soft pixel sky with drifting clouds (fills the page, behind the UI)
- *  - 孫悟空 on his golden somersault cloud (筋斗雲) as a small, crisp mascot that
- *    zig-zags around the page (亂飛) and waves his 金箍棒.
- * Fully hand-drawn from a pixel grid (no copyrighted art). Decorative only
- * (pointer-events: none).
+ * Teacher-page backdrop: a soft pixel sky with drifting clouds, plus 孫悟空 on his
+ * 筋斗雲 zig-zagging around the page (亂飛). Decorative only (pointer-events: none).
  */
-
-const U = 7 // pixel size
-
-// 15×15 sprite grid. '.' = transparent.
-const SPRITE = [
-  '...P.......P...',
-  '...PP.....PP...',
-  '...PP.....PP...',
-  '....PP...PP....',
-  '....RRRRRRR....',
-  '...GGGGGGGGG...',
-  '..KSSSSSSSSSK..',
-  '..KSSEESEESSK..',
-  '..KSSSSSSSSSK..',
-  '..KSSSMMMSSSK..',
-  '...KSSSSSSSK...',
-  '....KKKKKKK....',
-  '...AYYYYYYYA...',
-  '..AAYYYYYYYAA..',
-  '...YYYYYYYYY...'
-]
-
-const PAL: Record<string, string> = {
-  P: '#E8893B', // 雉雞翎 feathers
-  R: '#E0524D', // red headband
-  G: '#F7C948', // gold circlet
-  K: '#3A2A1E', // outline
-  S: '#F2C18A', // skin
-  E: '#2A2A2A', // eyes
-  M: '#B23A36', // mouth
-  A: '#C23B37', // cape
-  Y: '#F7C948' // golden armour
-}
-
-function SpritePixels() {
-  return (
-    <g shapeRendering="crispEdges">
-      {SPRITE.flatMap((row, y) =>
-        [...row].map((ch, x) => {
-          const c = PAL[ch]
-          return c ? <rect key={`${x}-${y}`} x={x * U} y={y * U} width={U} height={U} fill={c} /> : null
-        })
-      )}
-    </g>
-  )
-}
 
 function PxCloud({ scale = 1, color = '#FFFFFF' }: { scale?: number; color?: string }) {
   const s = 8 * scale
@@ -97,56 +49,18 @@ export function WukongCloudBackdrop() {
         </g>
       </svg>
 
-      {/* the flying 孫悟空 mascot — small & crisp, zig-zags around the page */}
+      {/* the flying 孫悟空 mascot — zig-zags around the page */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           zIndex: 2,
-          width: 132,
           pointerEvents: 'none',
           animation: 'wkFly 18s ease-in-out infinite',
           filter: 'drop-shadow(0 6px 6px rgba(60,60,90,0.22))'
         }}
       >
-        <svg
-          viewBox="-21 -8 147 156"
-          width="132"
-          style={{ display: 'block', imageRendering: 'pixelated' }}
-        >
-          {/* golden somersault cloud (筋斗雲) */}
-          <g shapeRendering="crispEdges">
-            <rect x={-3 * U} y={14 * U} width={21 * U} height={3 * U} fill="#F4DC82" />
-            <rect x={-2 * U} y={13 * U} width={5 * U} height={U} fill="#F4DC82" />
-            <rect x={6 * U} y={12 * U} width={5 * U} height={2 * U} fill="#F4DC82" />
-            <rect x={12 * U} y={13 * U} width={5 * U} height={U} fill="#F4DC82" />
-            <rect x={-3 * U} y={14 * U} width={21 * U} height={U} fill="#FFF3C4" />
-            <rect x={-3 * U} y={17 * U} width={21 * U} height={U} fill="#E6C766" />
-          </g>
-
-          <SpritePixels />
-
-          {/* staff 金箍棒 — waves up and down */}
-          <g transform={`translate(${10 * U} ${10 * U})`}>
-            <g>
-              <animateTransform
-                attributeName="transform"
-                type="rotate"
-                values="-55;-8;-55"
-                keyTimes="0;0.5;1"
-                calcMode="spline"
-                keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
-                dur="1.2s"
-                repeatCount="indefinite"
-              />
-              <g shapeRendering="crispEdges">
-                <rect x={-0.5 * U} y={-0.5 * U} width={7 * U} height={U} fill="#E8C24B" />
-                <rect x={-0.7 * U} y={-0.8 * U} width={0.7 * U} height={1.6 * U} fill="#8B5A2B" />
-                <rect x={5.8 * U} y={-0.8 * U} width={0.7 * U} height={1.6 * U} fill="#8B5A2B" />
-              </g>
-            </g>
-          </g>
-        </svg>
+        <PixelWukong size={132} />
       </div>
     </>
   )

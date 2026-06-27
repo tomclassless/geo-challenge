@@ -14,6 +14,7 @@ export { GeneralSprite } from './game/GeneralSprite'
 export { WukongMeter } from './game/WukongMeter'
 export { StopButton } from './game/StopButton'
 export { PauseOverlay } from './game/PauseOverlay'
+export { PixelWukong, PixelGeneral, PixelBattle } from './game/PixelSprites'
 
 export { MatrixCell } from './report/MatrixCell'
 export { AccuracyBar } from './report/AccuracyBar'

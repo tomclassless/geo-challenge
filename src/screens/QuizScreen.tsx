@@ -4,7 +4,7 @@ import { useGame, selectActiveCity, type AnswerOutcome } from '../state/gameStor
 import { QuestionMedia } from '../components/QuestionMedia'
 import {
   Avatar, TimerBar, QuestionProgress, AnswerOption, Button,
-  WukongMeter, SpecialtyIcon, StopButton, PauseOverlay
+  WukongMeter, SpecialtyIcon, StopButton, PauseOverlay, PixelBattle
 } from '../ds'
 
 export function QuizScreen() {
@@ -77,17 +77,9 @@ export function QuizScreen() {
         </div>
       </div>
 
-      {/* soldier's remaining specialties */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 36px 0' }}>
-        <span style={{ fontSize: 24 }}>{meta.general.emoji}</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {Array.from({ length: total }).map((_, i) => (
-            <SpecialtyIcon key={i} emoji={meta.specialty.emoji} size={32} dimmed={i < turnCorrect} />
-          ))}
-        </div>
-        <span style={{ marginLeft: 8, color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>
-          {meta.general.name}身上的{meta.specialty.name}
-        </span>
+      {/* pixel battle: 孫悟空 vs 天兵 + specialties at stake */}
+      <div style={{ padding: '10px 36px 0' }}>
+        <PixelBattle meta={meta} total={total} dropped={turnCorrect} hit={!!feedback?.correct} />
       </div>
 
       {/* timer */}
