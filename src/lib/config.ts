@@ -16,6 +16,24 @@ export function setApiUrl(url: string): void {
 }
 
 /**
+ * Pull an Apps Script /exec URL out of arbitrary scanned QR text. The QR may
+ * carry the URL directly, or wrap it as a `?api=<url>` link (the same shape
+ * adoptApiFromUrl() understands). Returns '' if nothing usable is found.
+ */
+export function extractApiUrl(text: string): string {
+  const raw = (text || '').trim()
+  if (!raw) return ''
+  try {
+    const u = new URL(raw)
+    const api = u.searchParams.get('api')
+    if (api && api.trim()) return api.trim()
+  } catch {
+    /* not a full URL — fall through */
+  }
+  return raw
+}
+
+/**
  * If the page was opened with ?api=<url> (e.g. a QR link that carries the
  * backend URL), persist it so the device is configured automatically.
  * Returns true if a new URL was adopted.
