@@ -1,9 +1,12 @@
-import { useState } from 'react'
-import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2, QrCode, Lock } from 'lucide-react'
-import { useGame, selectPlayableCities } from '../state/gameStore'
+import { useEffect, useState } from 'react'
+import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2, QrCode, Lock, Image as ImageIcon, Check, CloudDownload } from 'lucide-react'
+import { useGame, selectPlayableCities, collectRequiredMedia } from '../state/gameStore'
 import type { CampaignState } from '../lib/types'
 import type { CityMeta } from '../lib/cities'
 import { getApiUrl, setApiUrl, extractApiUrl } from '../lib/config'
+import { blobToBase64, compressImage } from '../lib/media'
+import { uploadMedia } from '../lib/sheetsApi'
+import { listMediaNames, loadBanks, saveMedia } from '../lib/offlineStore'
 import { Button, IconButton, Card, Badge, Stat, Logo, PinInput } from '../ds'
 import { Modal } from '../ds/shell/Modal'
 import { QrScanner } from './QrScanner'
@@ -13,12 +16,13 @@ import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 /** 老師操作頁 — the hub shown before a game and after every round ends. */
 export function HomeScreen() {
   const {
-    regions, roster, campaigns, lastSync, pending, online, syncing,
+    regions, roster, campaigns, lastSync, pending, online, syncing, mediaProgress,
     sync, loadSample, startCampaign, continueCampaign, deleteSave, viewSaveReport, goReport, goHistory, goRoster
   } = useGame()
   const cities = useGame(selectPlayableCities)
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showMedia, setShowMedia] = useState(false)
   const [message, setMessage] = useState('')
   const [selCity, setSelCity] = useState(0)
 
@@ -171,7 +175,16 @@ export function HomeScreen() {
               <Button variant="accent" size="lg" block disabled={syncing} iconLeft={<RefreshCw size={22} />} onClick={doSync}>
                 {syncing ? '同步中…' : '雲端同步（更新題庫／上傳成績）'}
               </Button>
+              {mediaProgress && (
+                <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>
+                  下載題目圖片 {mediaProgress.done}/{mediaProgress.total}
+                  {mediaProgress.failed > 0 ? `（${mediaProgress.failed} 個失敗）` : ''}
+                </p>
+              )}
               {message && <p style={{ margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>{message}</p>}
+              <Button variant="ghost" block iconLeft={<ImageIcon size={20} />} onClick={() => setShowMedia(true)}>
+                題目圖片管理（上傳／檢查）
+              </Button>
               <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--fs-xs)', lineHeight: 1.5, marginTop: 'auto', marginBottom: 0 }}>
                 正確率與錯誤率會上傳雲端，可在「老師報表」查看每位玩家、每題的統計。
               </p>
@@ -181,6 +194,7 @@ export function HomeScreen() {
       )}
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showMedia && <MediaManagerModal onClose={() => setShowMedia(false)} />}
     </div>
   )
 }
@@ -220,6 +234,136 @@ function SaveRow({
       <Button variant="primary" iconLeft={<Play size={18} />} onClick={onContinue}>繼續</Button>
       <Button variant="ghost" iconLeft={<Trash2 size={18} />} onClick={onDelete} style={{ color: 'var(--wrong)' }}>刪除</Button>
     </div>
+  )
+}
+
+function MediaManagerModal({ onClose }: { onClose: () => void }) {
+  const config = useGame((s) => s.config)
+  const regions = useGame((s) => s.regions)
+
+  // Same PIN gate as the settings modal (auto-passes before the first sync).
+  const [authed, setAuthed] = useState(!config.teacherPin)
+  const [pin, setPin] = useState('')
+  const [pinError, setPinError] = useState(false)
+
+  const requiredNames = collectRequiredMedia(regions)
+  const [localSet, setLocalSet] = useState<Set<string>>(new Set())
+  const [cloudSet, setCloudSet] = useState<Set<string>>(new Set())
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState('')
+
+  const refresh = async () => {
+    const local = await listMediaNames()
+    setLocalSet(new Set(local))
+    const banks = await loadBanks()
+    setCloudSet(new Set((banks?.mediaIndex ?? []).map((m) => m.name)))
+  }
+  useEffect(() => { void refresh() }, [])
+
+  const onPick = async (name: string, file: File | undefined) => {
+    if (!file) return
+    setError('')
+    setBusy(name)
+    try {
+      const blob = await compressImage(file)
+      const base64 = await blobToBase64(blob)
+      const res = await uploadMedia(name, 'image/jpeg', base64)
+      if (!res.ok) throw new Error(res.error || '上傳失敗')
+      await saveMedia(name, blob, 'image/jpeg', res.updatedAt ?? '')
+      await refresh()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '上傳失敗')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  if (!authed) {
+    const complete = (v: string) => {
+      if (v === config.teacherPin) { setAuthed(true); setPinError(false) }
+      else { setPinError(true); setTimeout(() => { setPin(''); setPinError(false) }, 600) }
+    }
+    return (
+      <Modal onClose={onClose} width={420}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '8px 0' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 'var(--r-lg)', background: 'var(--brand-soft)', display: 'grid', placeItems: 'center', color: 'var(--brand-strong)' }}>
+            <Lock size={30} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>題目圖片管理</h2>
+            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)' }}>請輸入老師 PIN</p>
+          </div>
+          <PinInput value={pin} error={pinError} onChange={setPin} onComplete={complete} />
+          <Button variant="ghost" onClick={onClose}>返回</Button>
+        </div>
+      </Modal>
+    )
+  }
+
+  const missing = requiredNames.filter((n) => !localSet.has(n) && !cloudSet.has(n)).length
+
+  return (
+    <Modal onClose={onClose} width={600}>
+      <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>題目圖片管理</h2>
+      <p style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)', margin: '6px 0 0', lineHeight: 1.6 }}>
+        在 Google 試算表的 media 欄填「檔名」（建議用小寫英數，如 <code>taoyuan.jpg</code>），
+        再到這裡上傳對應的圖片。上傳後同步即可離線顯示。影片請用 YouTube 連結（不需上傳）。
+      </p>
+
+      {requiredNames.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', margin: '16px 0' }}>
+          題庫中沒有使用「檔名」的圖片題（可能都是網址或還沒同步題庫）。
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '14px 0', maxHeight: 360, overflowY: 'auto' }}>
+          {requiredNames.map((name) => {
+            const cached = localSet.has(name)
+            const onCloud = cloudSet.has(name)
+            return (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <span style={{ flex: 1, minWidth: 0, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                {cached ? (
+                  <Badge tone="correct" soft><Check size={14} style={{ verticalAlign: '-2px' }} /> 已可離線</Badge>
+                ) : onCloud ? (
+                  <Badge tone="neutral" soft><CloudDownload size={14} style={{ verticalAlign: '-2px' }} /> 雲端有・同步即可</Badge>
+                ) : (
+                  <Badge tone="wrong" soft>需上傳</Badge>
+                )}
+                <label
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+                    fontFamily: 'var(--font-sans)', fontWeight: 'var(--w-bold)' as unknown as number,
+                    fontSize: 'var(--fs-sm)', padding: '8px 14px', borderRadius: 'var(--r-sm)',
+                    cursor: busy === name ? 'not-allowed' : 'pointer', opacity: busy === name ? 0.45 : 1,
+                    background: cached || onCloud ? 'transparent' : 'var(--brand)',
+                    color: cached || onCloud ? 'var(--text)' : 'var(--text-on-brand)',
+                    boxShadow: cached || onCloud ? 'none' : '0 4px 0 var(--teal-700)'
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    disabled={busy === name}
+                    onChange={(e) => void onPick(name, e.target.files?.[0])}
+                  />
+                  <Upload size={16} />
+                  {busy === name ? '上傳中…' : cached || onCloud ? '重新上傳' : '上傳'}
+                </label>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {error && <p style={{ color: 'var(--wrong)', fontSize: 'var(--fs-sm)', margin: 0 }}>{error}</p>}
+      <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--fs-xs)', margin: '4px 0 0', lineHeight: 1.5 }}>
+        共 {requiredNames.length} 張，缺 {missing} 張。圖片會自動縮圖再上傳。iPhone 拍的 HEIC 若無法上傳，請改存成 JPG/PNG。
+      </p>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 14 }}>
+        <Button variant="primary" onClick={onClose}>完成</Button>
+      </div>
+    </Modal>
   )
 }
 

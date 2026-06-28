@@ -9,20 +9,35 @@
  *    - 誰可以存取:「任何人」
  * 4. 複製產生的網址(/exec 結尾),貼到 App 首頁「老師設定」的「後端網址」。
  *
+ * ⚠️ 圖片上傳功能(老師模式)需要 Google 雲端硬碟權限:
+ *    第一次部署或更新此程式後,Apps Script 會跳出「需要授權」,請按授權並
+ *    允許存取雲端硬碟。上傳的圖會放進一個叫「geo-challenge-media」的資料夾。
+ *
  * 試算表分頁約定:
  * - 每個「地區」一個分頁(分頁名即地區名,如「桃園」),第一列為標題:
  *     id | type | question | media | optA | optB | optC | optD | answer | explain
  *     type: text / image / video    answer: 正解選項字母(A/B/C/D)
+ *     media 欄填「檔名」(如 taoyuan.jpg),再到 App 老師模式上傳同名圖片;
+ *     也可填完整網址(http 開頭)或 YouTube 連結。
  * - Players 分頁:第一列標題 name,之後每列一位小孩。
  * - Config 分頁:第一列標題 key | value,資料列例如:
  *     teacherPin   | 1234
  *     timerSeconds | 30
  * - Results 分頁:成績會自動寫入(沒有會自動建立)。
+ * - Media 分頁:圖片對應表(name | fileId | mimeType | updatedAt),會自動建立。
  */
 
-var RESERVED = { 'Results': true, 'Players': true, 'Config': true, 'Regions': true };
+var RESERVED = { 'Results': true, 'Players': true, 'Config': true, 'Regions': true, 'Media': true };
 
-function doGet() {
+/** 統一檔名 key:去空白、轉小寫(前後端必須一致)。 */
+function normName_(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+
+function doGet(e) {
+  // 媒體下載:?media=檔名 → 回 base64(Drive 直連會踩 CORS,所以一律中轉)。
+  if (e && e.parameter && e.parameter.media) {
+    return getMedia_(normName_(e.parameter.media));
+  }
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var regions = [];
 
@@ -86,7 +101,21 @@ function doGet() {
     }
   }
 
-  return json({ regions: regions, players: players, config: config });
+  return json({ regions: regions, players: players, config: config, mediaIndex: readMediaIndex_(ss) });
+}
+
+/** 讀 Media 分頁回 [{name, mimeType, updatedAt}](不含 bytes),供前端判斷雲端有哪些圖。 */
+function readMediaIndex_(ss) {
+  var sh = ss.getSheetByName('Media');
+  if (!sh) return [];
+  var data = sh.getDataRange().getValues();
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    var name = normName_(data[i][0]);
+    if (!name) continue;
+    out.push({ name: name, mimeType: String(data[i][2] || ''), updatedAt: String(data[i][3] || '') });
+  }
+  return out;
 }
 
 function doPost(e) {
@@ -98,6 +127,11 @@ function doPost(e) {
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // --- media upload: { upload: { name, mimeType, dataBase64 } } saves to Drive ---
+  if (body.upload && body.upload.name && body.upload.dataBase64) {
+    return saveMedia_(ss, body.upload);
+  }
 
   // --- roster update: { players: [...] } overwrites the Players sheet ---
   if (body.players && Object.prototype.toString.call(body.players) === '[object Array]') {
@@ -123,6 +157,94 @@ function doPost(e) {
   });
 
   return json({ ok: true, added: rows.length });
+}
+
+// ---- 媒體(圖片)上傳 / 下載:存進 Google 雲端硬碟,對應表寫在 Media 分頁 ----
+
+/** 取得(或建立)專用 Drive 資料夾;folderId 快取在 Config 分頁的 mediaFolderId。 */
+function getMediaFolder_(ss) {
+  var cs = ss.getSheetByName('Config');
+  if (!cs) cs = ss.insertSheet('Config'), cs.appendRow(['key', 'value']);
+  var cv = cs.getDataRange().getValues();
+  for (var i = 1; i < cv.length; i++) {
+    if (String(cv[i][0] || '').trim() === 'mediaFolderId') {
+      var id = String(cv[i][1] || '').trim();
+      if (id) {
+        try { return DriveApp.getFolderById(id); } catch (err) { /* 失效 → 重建 */ }
+      }
+    }
+  }
+  var folder = DriveApp.createFolder('geo-challenge-media');
+  cs.appendRow(['mediaFolderId', folder.getId()]);
+  return folder;
+}
+
+/** 取得 Media 分頁(沒有就建)。 */
+function getMediaSheet_(ss) {
+  var sh = ss.getSheetByName('Media');
+  if (!sh) {
+    sh = ss.insertSheet('Media');
+    sh.appendRow(['name', 'fileId', 'mimeType', 'updatedAt']);
+  }
+  return sh;
+}
+
+/** 存一張圖:寫進 Drive,並在 Media 分頁新增/覆寫該檔名那列。 */
+function saveMedia_(ss, upload) {
+  try {
+    var name = normName_(upload.name);
+    var mimeType = String(upload.mimeType || 'application/octet-stream');
+    var bytes = Utilities.base64Decode(upload.dataBase64);
+    var blob = Utilities.newBlob(bytes, mimeType, name);
+    var folder = getMediaFolder_(ss);
+    var file = folder.createFile(blob);
+    var fileId = file.getId();
+
+    var sh = getMediaSheet_(ss);
+    var data = sh.getDataRange().getValues();
+    var when = new Date().toISOString();
+    var found = false;
+    for (var r = 1; r < data.length; r++) {
+      if (normName_(data[r][0]) === name) {
+        var oldId = String(data[r][1] || '').trim();
+        if (oldId && oldId !== fileId) {
+          try { DriveApp.getFileById(oldId).setTrashed(true); } catch (err) { /* 舊檔已不在 */ }
+        }
+        sh.getRange(r + 1, 1, 1, 4).setValues([[name, fileId, mimeType, when]]);
+        found = true;
+        break;
+      }
+    }
+    if (!found) sh.appendRow([name, fileId, mimeType, when]);
+
+    return json({ ok: true, name: name, fileId: fileId, mimeType: mimeType, updatedAt: when });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
+}
+
+/** 回傳一張圖的 base64(?media=檔名)。 */
+function getMedia_(name) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('Media');
+    if (!sh) return json({ ok: false, error: 'not found' });
+    var data = sh.getDataRange().getValues();
+    for (var r = 1; r < data.length; r++) {
+      if (normName_(data[r][0]) === name) {
+        var blob = DriveApp.getFileById(String(data[r][1])).getBlob();
+        return json({
+          ok: true,
+          name: name,
+          mimeType: String(data[r][2] || blob.getContentType() || ''),
+          dataBase64: Utilities.base64Encode(blob.getBytes())
+        });
+      }
+    }
+    return json({ ok: false, error: 'not found' });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
 }
 
 function json(obj) {

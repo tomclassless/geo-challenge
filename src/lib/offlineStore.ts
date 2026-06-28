@@ -6,6 +6,16 @@ export interface StoredResult extends AnswerResult {
   synced: 0 | 1
 }
 
+/** A media file (question image) cached for offline use. */
+export interface StoredMedia {
+  /** normalized filename key (lowercased, trimmed) */
+  name: string
+  blob: Blob
+  mimeType: string
+  /** ISO timestamp from the cloud Media sheet, for staleness checks */
+  updatedAt: string
+}
+
 interface GeoDB extends DBSchema {
   kv: { key: string; value: unknown }
   results: {
@@ -13,17 +23,23 @@ interface GeoDB extends DBSchema {
     value: StoredResult
     indexes: { 'by-synced': number }
   }
+  media: { key: string; value: StoredMedia }
 }
 
 let dbPromise: Promise<IDBPDatabase<GeoDB>> | null = null
 
 function getDB() {
   if (!dbPromise) {
-    dbPromise = openDB<GeoDB>('geo-quiz', 1, {
-      upgrade(db) {
-        db.createObjectStore('kv')
-        const results = db.createObjectStore('results', { keyPath: 'key', autoIncrement: true })
-        results.createIndex('by-synced', 'synced')
+    dbPromise = openDB<GeoDB>('geo-quiz', 2, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          db.createObjectStore('kv')
+          const results = db.createObjectStore('results', { keyPath: 'key', autoIncrement: true })
+          results.createIndex('by-synced', 'synced')
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('media')
+        }
       }
     })
   }
@@ -92,6 +108,40 @@ export async function saveRoster(names: string[]): Promise<void> {
 export async function loadRoster(): Promise<string[] | null> {
   const db = await getDB()
   return ((await db.get('kv', 'roster')) as string[] | undefined) ?? null
+}
+
+// ---- media (question images cached for offline) ----
+// Keys are normalized (trim + lowercase) to match the backend's normName_ and
+// media.ts's normalizeMediaKey. We normalize here too so every entry point is safe.
+
+function mediaKey(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+export async function saveMedia(name: string, blob: Blob, mimeType: string, updatedAt: string): Promise<void> {
+  const db = await getDB()
+  const key = mediaKey(name)
+  await db.put('media', { name: key, blob, mimeType, updatedAt }, key)
+}
+
+export async function loadMedia(name: string): Promise<StoredMedia | null> {
+  const db = await getDB()
+  return ((await db.get('media', mediaKey(name))) as StoredMedia | undefined) ?? null
+}
+
+export async function hasMedia(name: string): Promise<boolean> {
+  const db = await getDB()
+  return (await db.getKey('media', mediaKey(name))) != null
+}
+
+export async function listMediaNames(): Promise<string[]> {
+  const db = await getDB()
+  return (await db.getAllKeys('media')) as string[]
+}
+
+export async function deleteMedia(name: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('media', mediaKey(name))
 }
 
 // ---- results ----

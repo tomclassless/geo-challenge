@@ -4,13 +4,15 @@ import type {
   PlayableQuestion, Question, Region
 } from '../lib/types'
 import { makePlayable, shuffle } from '../lib/shuffle'
-import { fetchBanks, pushResults, pushRoster } from '../lib/sheetsApi'
+import { fetchBanks, fetchMedia, pushResults, pushRoster } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
 import { CITIES, findCity, type CityMeta } from '../lib/cities'
 import { adoptApiFromUrl } from '../lib/config'
+import { base64ToBlob, isBareFilename, normalizeMediaKey } from '../lib/media'
 import {
-  addResults, clearResults, deleteCampaign, getLastSync, getUnsynced, listCampaigns, loadBanks,
-  loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveRoster, takeLegacyCampaign
+  addResults, clearResults, deleteCampaign, getLastSync, getUnsynced, hasMedia, listCampaigns,
+  loadBanks, loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveMedia, saveRoster,
+  takeLegacyCampaign
 } from '../lib/offlineStore'
 
 export type Phase =
@@ -46,6 +48,8 @@ interface GameState {
   pending: number
   online: boolean
   syncing: boolean
+  /** progress while prefetching question images during sync (null = idle) */
+  mediaProgress: { done: number; total: number; failed: number } | null
 
   campaigns: CampaignState[]
   campaign: CampaignState | null
@@ -162,6 +166,7 @@ export const useGame = create<GameState>((set, get) => ({
   pending: 0,
   online: navigator.onLine,
   syncing: false,
+  mediaProgress: null,
 
   campaigns: [],
   campaign: null,
@@ -234,11 +239,15 @@ export const useGame = create<GameState>((set, get) => ({
         lastSync: await getLastSync(),
         pending: await pendingCount()
       })
+      // Prefetch question images into IndexedDB so the game is fully playable
+      // offline. Only fetches what's missing (so per-answer auto-sync stays cheap).
+      await prefetchMedia(banks.regions, (p) => set({ mediaProgress: p }))
+      set({ mediaProgress: null })
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : '同步失敗' }
     } finally {
-      set({ syncing: false })
+      set({ syncing: false, mediaProgress: null })
     }
   },
 
@@ -529,6 +538,45 @@ export const useGame = create<GameState>((set, get) => ({
 function stripStored(r: { synced: 0 | 1; key: number } & AnswerResult): AnswerResult {
   const { synced: _s, key: _k, ...rest } = r
   return rest
+}
+
+/** Collect every bare-filename media key referenced by the question bank. */
+export function collectRequiredMedia(regions: Region[]): string[] {
+  const set = new Set<string>()
+  for (const region of regions) {
+    for (const q of region.questions) {
+      if (q.media && isBareFilename(q.media)) set.add(normalizeMediaKey(q.media))
+    }
+  }
+  return [...set]
+}
+
+/** Download missing question images into IndexedDB. Skips ones already cached so
+ *  per-answer auto-sync stays cheap. A single failure never aborts the rest. */
+async function prefetchMedia(
+  regions: Region[],
+  onProgress: (p: { done: number; total: number; failed: number }) => void
+): Promise<void> {
+  const needed: string[] = []
+  for (const name of collectRequiredMedia(regions)) {
+    if (!(await hasMedia(name))) needed.push(name)
+  }
+  if (!needed.length) return
+
+  let done = 0
+  let failed = 0
+  onProgress({ done, total: needed.length, failed })
+  for (const name of needed) {
+    try {
+      const m = await fetchMedia(name)
+      if (m) await saveMedia(name, base64ToBlob(m.dataBase64, m.mimeType), m.mimeType, '')
+      else failed++
+    } catch {
+      failed++
+    }
+    done++
+    onProgress({ done, total: needed.length, failed })
+  }
 }
 
 // ---- selectors for screens ----

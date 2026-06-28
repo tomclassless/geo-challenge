@@ -29,8 +29,10 @@
 | 2 | image | 圖中是哪個機場? | taoyuan.jpg | 桃園機場 | 松山機場 | 小港機場 | 台中機場 | A | |
 
 - `type`:`text` / `image` / `video`
-- `media`:圖片或影片來源。**檔名**(如 `taoyuan.jpg`)→ 放到 `public/media/`,離線可用;
-  **完整網址**(http 開頭、YouTube 連結)→ 只在連網時看得到。
+- `media`:圖片或影片來源。
+  - **圖片檔名**(建議小寫英數,如 `taoyuan.jpg`)→ 在 App 首頁「題目圖片管理」上傳同名圖片(存到老師的 Google 雲端硬碟),同步後離線也看得到。不需要再手動把檔案丟進 `public/media/`。
+  - **完整網址**(http 開頭)→ 第一次連網看過後會自動快取。
+  - **影片**請用 **YouTube 連結**(`type` 填 `video`),只在連網時播放。
 - `answer`:正解選項字母 `A`/`B`/`C`/`D`。選項可只填 2–4 個。
 
 ### `Players` 分頁(名單)

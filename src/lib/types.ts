@@ -22,11 +22,20 @@ export interface AppConfig {
   timerSeconds: number
 }
 
+/** One entry in the cloud media manifest (no bytes — just what exists). */
+export interface MediaIndexEntry {
+  name: string
+  mimeType: string
+  updatedAt: string
+}
+
 /** Payload returned by the Apps Script GET endpoint. */
 export interface BanksPayload {
   regions: Region[]
   players: string[]
   config: AppConfig
+  /** Filenames the backend has stored in Drive (for offline prefetch + upload UI). */
+  mediaIndex?: MediaIndexEntry[]
 }
 
 /** A question prepared for one player: question order + option order shuffled. */
