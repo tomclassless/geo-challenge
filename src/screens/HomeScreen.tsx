@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2, QrCode } from 'lucide-react'
+import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Play, Users, Flag, Sword, Trash2, QrCode, Lock } from 'lucide-react'
 import { useGame, selectPlayableCities } from '../state/gameStore'
 import type { CampaignState } from '../lib/types'
 import type { CityMeta } from '../lib/cities'
 import { getApiUrl, setApiUrl, extractApiUrl } from '../lib/config'
-import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
+import { Button, IconButton, Card, Badge, Stat, Logo, PinInput } from '../ds'
 import { Modal } from '../ds/shell/Modal'
 import { QrScanner } from './QrScanner'
 import { WukongCloudBackdrop } from '../ds/shell/WukongCloudBackdrop'
@@ -224,13 +224,43 @@ function SaveRow({
 }
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
+  const config = useGame((s) => s.config)
   const [url, setUrl] = useState(getApiUrl())
   const [scanning, setScanning] = useState(false)
+
+  // Lock settings behind the teacher PIN once one exists (synced from Config),
+  // so children can't change the backend URL. Before the first sync there is no
+  // PIN yet, so the gate auto-passes and initial setup still works.
+  const [authed, setAuthed] = useState(!config.teacherPin)
+  const [pin, setPin] = useState('')
+  const [pinError, setPinError] = useState(false)
 
   const onScanned = (text: string) => {
     const found = extractApiUrl(text)
     if (found) setUrl(found)
     setScanning(false)
+  }
+
+  if (!authed) {
+    const complete = (v: string) => {
+      if (v === config.teacherPin) { setAuthed(true); setPinError(false) }
+      else { setPinError(true); setTimeout(() => { setPin(''); setPinError(false) }, 600) }
+    }
+    return (
+      <Modal onClose={onClose} width={420}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '8px 0' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 'var(--r-lg)', background: 'var(--brand-soft)', display: 'grid', placeItems: 'center', color: 'var(--brand-strong)' }}>
+            <Lock size={30} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>設定</h2>
+            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)' }}>請輸入老師 PIN</p>
+          </div>
+          <PinInput value={pin} error={pinError} onChange={setPin} onComplete={complete} />
+          <Button variant="ghost" onClick={onClose}>返回</Button>
+        </div>
+      </Modal>
+    )
   }
 
   return (
