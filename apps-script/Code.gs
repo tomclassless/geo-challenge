@@ -30,6 +30,18 @@
 
 var RESERVED = { 'Results': true, 'Players': true, 'Config': true, 'Regions': true, 'Media': true };
 
+/**
+ * 第一次部署(或更新後)請在編輯器選這個函式按「執行」一次,
+ * 同意 Google 雲端硬碟與試算表權限。授權後圖片上傳才能用。
+ * (不需要每次跑;授權一次即可。)
+ */
+function authorize() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  getMediaFolder_(ss);          // 觸發 DriveApp 權限(建立/取得 geo-challenge-media 資料夾)
+  getMediaSheet_(ss);           // 觸發 SpreadsheetApp 寫入權限(建立 Media 分頁)
+  Logger.log('授權完成,可以開始上傳圖片了。');
+}
+
 /** 統一檔名 key:去空白、轉小寫(前後端必須一致)。 */
 function normName_(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
 
