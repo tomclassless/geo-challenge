@@ -36,7 +36,14 @@ export interface AnswerOutcome {
 
 const DEFAULT_CONFIG: AppConfig = { teacherPin: '', timerSeconds: 20 }
 const PER_TURN = 5
-const BASE_TARGET = 60
+// 過關門檻 = 全部特產(人數×每人題數)的六成;要調整過關難度改這個比例即可。
+// 留六成緩衝,讓少數人請假/被跳過、貢獻為零時,剩下的人仍湊得到目標而不會卡死局。
+const CLEAR_RATIO = 0.6
+
+/** 該班的過關目標:四捨五入(人數 × 每人題數 × 成數),至少 1。 */
+function clearTarget(rosterLen: number): number {
+  return Math.max(1, Math.round(rosterLen * PER_TURN * CLEAR_RATIO))
+}
 
 interface GameState {
   loaded: boolean
@@ -86,6 +93,7 @@ interface GameState {
   answer: (optionIndex: number | null) => Promise<AnswerOutcome>
   advanceTurn: () => void
   endTurn: () => void
+  skipTurn: () => void
   continueAfterTurn: () => void
   endRound: () => void
   advanceCity: () => void
@@ -312,7 +320,7 @@ export const useGame = create<GameState>((set, get) => ({
       roster: [...roster],
       cityIndex: idx,
       cities: {},
-      target: Math.min(BASE_TARGET, roster.length * PER_TURN),
+      target: clearTarget(roster.length),
       perTurn: PER_TURN,
       startedAt: now,
       updatedAt: now
@@ -476,7 +484,7 @@ export const useGame = create<GameState>((set, get) => ({
       total: turnQuestions.length,
       progressDiff: null
     }
-    if (cs.collected >= campaign.target) cs.cleared = true
+    if (cs.collected >= clearTarget(campaign.roster.length)) cs.cleared = true
     void saveCampaign(campaign)
     set({
       campaign: { ...campaign },
@@ -489,6 +497,23 @@ export const useGame = create<GameState>((set, get) => ({
   continueAfterTurn: () => {
     if (get().turnQueue.length) get().nextTurn()
     else get().endRound()
+  },
+
+  /** 老師按「今天不在」：略過當前學生本局的回合，不寫入任何答對、不動進度。
+   *  該生題目仍未答對，下一局 beginRound 仍會把他列入並重新點到。 */
+  skipTurn: () => {
+    const { campaign, regions, currentPlayer } = get()
+    if (!campaign || !currentPlayer) return
+    const ac = activeCity(regions, campaign)
+    if (ac) {
+      const cs = ensureCityState(campaign, ac.meta.region)
+      const ps = cs.players[currentPlayer]
+      if (ps) ps.servedThisRound = true
+      void saveCampaign(campaign)
+      set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign) })
+    }
+    set({ currentPlayer: null })
+    get().continueAfterTurn()
   },
 
   endRound: () => {
@@ -614,7 +639,7 @@ export function selectActiveCity(s: GameState): ActiveCityView | null {
     meta: ac.meta,
     region: ac.region,
     collected: city?.collected ?? 0,
-    target: s.campaign.target,
+    target: clearTarget(s.campaign.roster.length),
     round: city?.round ?? 1,
     cleared: city?.cleared ?? false
   }

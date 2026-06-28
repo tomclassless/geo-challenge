@@ -1,11 +1,11 @@
-import { Sword } from 'lucide-react'
+import { Sword, SkipForward } from 'lucide-react'
 import { useGame, selectActiveCity } from '../state/gameStore'
 import { Button, Badge, GeneralSprite, SpecialtyIcon, WukongMeter } from '../ds'
 
 /** A 天兵 appears bearing the current player's name, its specialties, and an
  *  attack button. Tapping 攻擊 reveals the first question. */
 export function EncounterScreen() {
-  const { currentPlayer, turnQuestions, attack } = useGame()
+  const { currentPlayer, turnQuestions, attack, skipTurn } = useGame()
   const active = useGame(selectActiveCity)
   if (!active) return null
   const { meta, collected, target } = active
@@ -35,6 +35,10 @@ export function EncounterScreen() {
 
       <Button variant="primary" size="xl" iconLeft={<Sword size={24} />} onClick={attack}>
         ⚔️ 攻擊（開始答題）
+      </Button>
+
+      <Button variant="ghost" size="lg" iconLeft={<SkipForward size={20} />} onClick={skipTurn}>
+        今天不在，跳過
       </Button>
     </div>
   )
