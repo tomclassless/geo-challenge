@@ -134,6 +134,24 @@ function upsertCampaign(list: CampaignState[], c: CampaignState): CampaignState[
   return next
 }
 
+/** Stamp the campaign's last-modified time and return it (for chaining). */
+function touch(c: CampaignState): CampaignState {
+  c.updatedAt = new Date().toISOString()
+  return c
+}
+
+/** Persist the campaign and reflect it into the store (active + saves list),
+ *  merging any extra state to set in the same update. */
+function commitCampaign(
+  set: (partial: Partial<GameState>) => void,
+  get: () => GameState,
+  campaign: CampaignState,
+  extra?: Partial<GameState>
+): void {
+  void saveCampaign(campaign)
+  set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign), ...extra })
+}
+
 /** Cities that have a matching question bank, in play order. */
 function getPlayableCities(regions: Region[]): CityMeta[] {
   return CITIES
@@ -447,7 +465,7 @@ export const useGame = create<GameState>((set, get) => ({
       cs.collected += 1
       dropped = true
     }
-    campaign.updatedAt = new Date().toISOString()
+    touch(campaign)
     await saveCampaign(campaign)
 
     set({
@@ -484,14 +502,9 @@ export const useGame = create<GameState>((set, get) => ({
       total: turnQuestions.length,
       progressDiff: null
     }
-    if (cs.collected >= clearTarget(campaign.roster.length)) cs.cleared = true
-    void saveCampaign(campaign)
-    set({
-      campaign: { ...campaign },
-      campaigns: upsertCampaign(get().campaigns, campaign),
-      lastResult,
-      phase: cs.cleared ? 'cityCleared' : 'turnResult'
-    })
+    // 達標與否一律先回 turnResult,讓這一輪排在後面的小朋友也都玩得到;
+    // 真正的破關判斷延到整輪結束(endRound)時才做。
+    commitCampaign(set, get, campaign, { lastResult, phase: 'turnResult' })
   },
 
   continueAfterTurn: () => {
@@ -509,8 +522,7 @@ export const useGame = create<GameState>((set, get) => ({
       const cs = ensureCityState(campaign, ac.meta.region)
       const ps = cs.players[currentPlayer]
       if (ps) ps.servedThisRound = true
-      void saveCampaign(campaign)
-      set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign) })
+      commitCampaign(set, get, campaign)
     }
     set({ currentPlayer: null })
     get().continueAfterTurn()
@@ -520,10 +532,18 @@ export const useGame = create<GameState>((set, get) => ({
     const { campaign, regions } = get()
     if (!campaign) return
     const ac = activeCity(regions, campaign)
-    if (ac) ensureCityState(campaign, ac.meta.region).round += 1
-    campaign.updatedAt = new Date().toISOString()
-    void saveCampaign(campaign)
-    set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign), currentPlayer: null, phase: 'roundEnd' })
+    if (!ac) return
+    const cs = ensureCityState(campaign, ac.meta.region)
+    // 整輪所有人都玩完後,才結算是否破關。
+    if (cs.collected >= clearTarget(campaign.roster.length)) {
+      cs.cleared = true
+      touch(campaign)
+      commitCampaign(set, get, campaign, { currentPlayer: null, phase: 'cityCleared' })
+      return
+    }
+    cs.round += 1
+    touch(campaign)
+    commitCampaign(set, get, campaign, { currentPlayer: null, phase: 'roundEnd' })
   },
 
   advanceCity: () => {
@@ -532,14 +552,12 @@ export const useGame = create<GameState>((set, get) => ({
     const ac = activeCity(regions, campaign)
     if (ac) ensureCityState(campaign, ac.meta.region).cleared = true
     campaign.cityIndex += 1
-    campaign.updatedAt = new Date().toISOString()
-    void saveCampaign(campaign)
-    const campaigns = upsertCampaign(get().campaigns, campaign)
+    touch(campaign)
     if (campaign.cityIndex >= getPlayableCities(regions).length) {
-      set({ campaign: { ...campaign }, campaigns, phase: 'gameWon' })
+      commitCampaign(set, get, campaign, { phase: 'gameWon' })
     } else {
       const next = activeCity(regions, campaign)
-      set({ campaign: { ...campaign }, campaigns, region: next?.region.name ?? null, phase: 'cityIntro' })
+      commitCampaign(set, get, campaign, { region: next?.region.name ?? null, phase: 'cityIntro' })
     }
   },
 

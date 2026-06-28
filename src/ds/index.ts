@@ -20,5 +20,6 @@ export { MatrixCell } from './report/MatrixCell'
 export { AccuracyBar } from './report/AccuracyBar'
 export { Stat } from './report/Stat'
 export { PinInput } from './report/PinInput'
+export { PinGate } from './report/PinGate'
 
 export { Logo } from './shell/Logo'

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Lock, ChevronLeft, Clock, Home, RotateCcw } from 'lucide-react'
+import { ChevronLeft, Clock, Home, RotateCcw } from 'lucide-react'
 import { useGame } from '../state/gameStore'
 import { buildReport, type Cell, type ReportData } from '../lib/report'
-import { Stat, AccuracyBar, MatrixCell, Button } from '../ds'
-import { PinInput } from '../ds/report/PinInput'
+import { Stat, AccuracyBar, MatrixCell, Button, PinGate } from '../ds'
 
 type MatrixState = 'correct' | 'wrong' | 'unanswered'
 const CELL_STATE: Record<Cell, MatrixState> = {
@@ -20,10 +19,7 @@ export function AccuracyReportScreen() {
   const [data, setData] = useState<ReportData | null>(null)
   const [refresh, setRefresh] = useState(0)
 
-  // built-in PIN gate (replaces the old PinGate modal)
   const [authed, setAuthed] = useState(!config.teacherPin)
-  const [pin, setPin] = useState('')
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     if (!region) return
@@ -48,22 +44,14 @@ export function AccuracyReportScreen() {
   }, [data])
 
   if (!authed) {
-    const complete = (v: string) => {
-      if (v === config.teacherPin) { setAuthed(true); setError(false) }
-      else { setError(true); setTimeout(() => { setPin(''); setError(false) }, 600) }
-    }
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, background: 'var(--bg)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: 'var(--r-lg)', background: 'var(--brand-soft)', display: 'grid', placeItems: 'center', color: 'var(--brand-strong)' }}>
-          <Lock size={30} />
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>老師報表</h2>
-          <p style={{ margin: '6px 0 0', color: 'var(--text-muted)' }}>請輸入老師 PIN</p>
-        </div>
-        <PinInput value={pin} error={error} onChange={setPin} onComplete={complete} />
-        <Button variant="ghost" onClick={goHome}>返回</Button>
-      </div>
+      <PinGate
+        pin={config.teacherPin}
+        title="老師報表"
+        variant="fullscreen"
+        onPass={() => setAuthed(true)}
+        onCancel={goHome}
+      />
     )
   }
 
