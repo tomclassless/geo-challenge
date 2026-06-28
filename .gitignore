@@ -5,3 +5,10 @@ dist-ssr
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
+
+# QR 圖會內嵌真實後端 /exec 網址，請勿提交（公開 repo 會外洩可寫入端點）
+public/qr.png
+public/qr.svg
+public/qr-cute.png
+public/qr-*.png
+public/qr-*.svg
