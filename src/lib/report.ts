@@ -4,6 +4,10 @@ import type { Region } from './types'
 export interface QuestionStat {
   questionId: string
   label: string
+  /** full question text (untruncated) */
+  text: string
+  /** correct answer option text, or '' if unknown */
+  answer: string
   correct: number
   total: number
   rate: number // 0..1
@@ -33,10 +37,20 @@ export interface SessionInfo {
   avgRate: number // 0..1
 }
 
+function questionFor(region: Region | undefined, qid: string) {
+  return region?.questions.find((x) => x.id === qid)
+}
+
 function labelFor(region: Region | undefined, qid: string): string {
-  const q = region?.questions.find((x) => x.id === qid)
-  const text = q?.question ?? qid
+  const text = questionFor(region, qid)?.question ?? qid
   return text.length > 18 ? text.slice(0, 18) + '…' : text
+}
+
+/** Correct answer option text for a question, or '' if unknown. */
+function answerFor(region: Region | undefined, qid: string): string {
+  const q = questionFor(region, qid)
+  if (!q) return ''
+  return q.options[q.answerIndex] ?? ''
 }
 
 /** Build the teacher report for one region, optionally limited to one session
@@ -66,7 +80,15 @@ export async function buildReport(
     const qr = rows.filter((r) => r.questionId === qid)
     const correct = qr.filter((r) => r.correct).length
     const total = qr.length
-    return { questionId: qid, label: labelFor(reg, qid), correct, total, rate: total ? correct / total : 0 }
+    return {
+      questionId: qid,
+      label: labelFor(reg, qid),
+      text: questionFor(reg, qid)?.question ?? qid,
+      answer: answerFor(reg, qid),
+      correct,
+      total,
+      rate: total ? correct / total : 0,
+    }
   })
 
   const players = [...new Set(rows.map((r) => r.playerName))].sort()

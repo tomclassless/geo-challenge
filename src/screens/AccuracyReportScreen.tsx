@@ -109,12 +109,20 @@ export function AccuracyReportScreen() {
                 {data.stats.map((s, qi) => (
                   <div key={s.questionId}>
                     <AccuracyBar label={`第 ${qi + 1} 題`} correct={s.correct} answered={s.total} />
+                    <div style={{ marginLeft: 108, marginTop: 4, fontSize: 'var(--fs-sm)', fontWeight: 700, lineHeight: 1.4 }}>
+                      {s.text}
+                    </div>
+                    {s.answer && (
+                      <div style={{ marginLeft: 108, marginTop: 2, fontSize: 'var(--fs-xs)', color: 'var(--correct, var(--brand-strong))', fontWeight: 700 }}>
+                        正解：{s.answer}
+                      </div>
+                    )}
                     <div style={{ marginLeft: 108, marginTop: 2, fontSize: 'var(--fs-xs)', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                       正確率 {Math.round(s.rate * 100)}%・錯誤率 {Math.round((1 - s.rate) * 100)}%（作答 {s.total} 次）
                     </div>
                     {qi === summary!.weakIdx && (
                       <div style={{ marginTop: 4, marginLeft: 108, fontSize: 'var(--fs-xs)', color: 'var(--wrong)', fontWeight: 700 }}>
-                        ⚠ 全班最弱 · 建議課堂檢討：{s.label}
+                        ⚠ 全班最弱 · 建議課堂檢討
                       </div>
                     )}
                   </div>
@@ -127,7 +135,7 @@ export function AccuracyReportScreen() {
                     <tr>
                       <th style={{ position: 'sticky', left: 0, background: 'var(--bg)', textAlign: 'left', padding: '0 12px', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>學生 \ 題</th>
                       {data.stats.map((s, qi) => (
-                        <th key={s.questionId} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-xs)', color: qi === summary!.weakIdx ? 'var(--wrong)' : 'var(--text-muted)', fontWeight: 700, paddingBottom: 4 }}>
+                        <th key={s.questionId} title={`第 ${qi + 1} 題：${s.text}${s.answer ? `\n正解：${s.answer}` : ''}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-xs)', color: qi === summary!.weakIdx ? 'var(--wrong)' : 'var(--text-muted)', fontWeight: 700, paddingBottom: 4, cursor: 'help' }}>
                           {qi + 1}
                         </th>
                       ))}
