@@ -41,24 +41,49 @@ export async function pushRoster(players: string[]): Promise<void> {
 }
 
 /**
- * Upload a question image to the backend (Apps Script → Google Drive).
+ * Upload a question image to the backend (Apps Script → Google Drive). The
+ * backend auto-generates the filename from region+id, stores the file, and
+ * writes the filename + type=image back into that question's sheet row.
  * `dataBase64` is the raw base64 (no data: prefix). text/plain avoids preflight.
  */
-export async function uploadMedia(
-  name: string,
+export async function uploadQuestionMedia(
+  region: string,
+  id: string,
   mimeType: string,
   dataBase64: string
-): Promise<{ ok: boolean; fileId?: string; updatedAt?: string; error?: string }> {
+): Promise<{ ok: boolean; name?: string; type?: string; updatedAt?: string; error?: string }> {
   const url = getApiUrl()
   if (!url) throw new Error('尚未設定後端網址')
   const res = await fetch(url, {
     method: 'POST',
     redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ upload: { name, mimeType, dataBase64 } })
+    body: JSON.stringify({ upload: { region, id, mimeType, dataBase64 } })
   })
   if (!res.ok) throw new Error('上傳圖片失敗 (' + res.status + ')')
-  return (await res.json()) as { ok: boolean; fileId?: string; updatedAt?: string; error?: string }
+  return (await res.json()) as { ok: boolean; name?: string; type?: string; updatedAt?: string; error?: string }
+}
+
+/**
+ * Write a question's media + type back to the sheet without uploading a file
+ * (e.g. a YouTube link, or clearing the media). text/plain avoids preflight.
+ */
+export async function setQuestionMedia(
+  region: string,
+  id: string,
+  media: string,
+  type: string
+): Promise<{ ok: boolean; error?: string }> {
+  const url = getApiUrl()
+  if (!url) throw new Error('尚未設定後端網址')
+  const res = await fetch(url, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ setMedia: { region, id, media, type } })
+  })
+  if (!res.ok) throw new Error('更新題目失敗 (' + res.status + ')')
+  return (await res.json()) as { ok: boolean; error?: string }
 }
 
 /**

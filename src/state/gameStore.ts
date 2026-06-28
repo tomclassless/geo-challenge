@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type {
   AnswerResult, AppConfig, CampaignCityState, CampaignState,
-  PlayableQuestion, Question, Region
+  PlayableQuestion, Question, QuestionType, Region
 } from '../lib/types'
 import { makePlayable, shuffle } from '../lib/shuffle'
 import { fetchBanks, fetchMedia, pushResults, pushRoster } from '../lib/sheetsApi'
@@ -12,7 +12,7 @@ import { base64ToBlob, isBareFilename, normalizeMediaKey } from '../lib/media'
 import {
   addResults, clearResults, deleteCampaign, getLastSync, getUnsynced, hasMedia, listCampaigns,
   loadBanks, loadRoster, markSynced, pendingCount, saveBanks, saveCampaign, saveMedia, saveRoster,
-  takeLegacyCampaign
+  takeLegacyCampaign, writeBanks
 } from '../lib/offlineStore'
 
 export type Phase =
@@ -71,6 +71,8 @@ interface GameState {
   init: () => Promise<void>
   sync: () => Promise<{ ok: boolean; error?: string }>
   loadSample: () => Promise<void>
+  /** Update one question's media + type in memory and in the cached banks. */
+  setQuestionMedia: (region: string, id: string, media: string, type: QuestionType) => Promise<void>
   setRoster: (names: string[]) => Promise<void>
   saveRosterCloud: (names: string[]) => Promise<{ ok: boolean; error?: string }>
 
@@ -261,6 +263,19 @@ export const useGame = create<GameState>((set, get) => ({
       roster: roster.length ? roster : SAMPLE_BANKS.players,
       lastSync: await getLastSync()
     })
+  },
+
+  setQuestionMedia: async (region, id, media, type) => {
+    const apply = (regions: Region[]) =>
+      regions.map((r) =>
+        r.name !== region
+          ? r
+          : { ...r, questions: r.questions.map((q) => (q.id === id ? { ...q, media, type } : q)) }
+      )
+    set({ regions: apply(get().regions) })
+    // Persist into the cached banks so a reload before the next sync keeps it.
+    const banks = await loadBanks()
+    if (banks) await writeBanks({ ...banks, regions: apply(banks.regions) })
   },
 
   setRoster: async (names) => {

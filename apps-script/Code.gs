@@ -17,8 +17,9 @@
  * - 每個「地區」一個分頁(分頁名即地區名,如「桃園」),第一列為標題:
  *     id | type | question | media | optA | optB | optC | optD | answer | explain
  *     type: text / image / video    answer: 正解選項字母(A/B/C/D)
- *     media 欄填「檔名」(如 taoyuan.jpg),再到 App 老師模式上傳同名圖片;
- *     也可填完整網址(http 開頭)或 YouTube 連結。
+ *     media / type 欄可留空:在 App「題目圖片影片管理」選題目上傳圖片或貼
+ *     YouTube 連結,App 會自動把檔名/連結與 type 寫回這兩欄。也可手動填
+ *     完整網址(http 開頭)或自填檔名。
  * - Players 分頁:第一列標題 name,之後每列一位小孩。
  * - Config 分頁:第一列標題 key | value,資料列例如:
  *     teacherPin   | 1234
@@ -128,9 +129,19 @@ function doPost(e) {
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // --- media upload: { upload: { name, mimeType, dataBase64 } } saves to Drive ---
-  if (body.upload && body.upload.name && body.upload.dataBase64) {
+  // --- media upload: saves an image to Drive (and writes the filename back to
+  //     the question row when region+id are given). ---
+  //     new:    { upload: { region, id, mimeType, dataBase64 } }  → auto name + write-back
+  //     legacy: { upload: { name,   mimeType, dataBase64 } }      → store only
+  if (body.upload && body.upload.dataBase64) {
     return saveMedia_(ss, body.upload);
+  }
+
+  // --- set media on a question: { setMedia: { region, id, media, type } } ---
+  //     used for YouTube links / clearing — write-back only, no Drive file.
+  if (body.setMedia && body.setMedia.region != null && body.setMedia.id != null) {
+    var sm = body.setMedia;
+    return writeBackMedia_(ss, String(sm.region), String(sm.id), String(sm.media || ''), String(sm.type || ''));
   }
 
   // --- roster update: { players: [...] } overwrites the Players sheet ---
@@ -189,11 +200,27 @@ function getMediaSheet_(ss) {
   return sh;
 }
 
-/** 存一張圖:寫進 Drive,並在 Media 分頁新增/覆寫該檔名那列。 */
+/** 由 mimeType 推副檔名(圖片用)。 */
+function extFromMime_(mimeType) {
+  var m = String(mimeType || '').toLowerCase();
+  if (m.indexOf('png') >= 0) return 'png';
+  if (m.indexOf('gif') >= 0) return 'gif';
+  if (m.indexOf('webp') >= 0) return 'webp';
+  return 'jpg';
+}
+
+/** 存一張圖:寫進 Drive,並在 Media 分頁新增/覆寫該檔名那列。
+ *  - 新流程:upload 帶 region+id → 自動產生檔名,存檔後把 media/type 寫回題目那列。
+ *  - 舊流程:upload 帶 name → 只存檔。 */
 function saveMedia_(ss, upload) {
   try {
-    var name = normName_(upload.name);
     var mimeType = String(upload.mimeType || 'application/octet-stream');
+    var hasQ = upload.region != null && upload.id != null;
+    var name = hasQ
+      ? normName_(String(upload.region) + '-' + String(upload.id) + '.' + extFromMime_(mimeType))
+      : normName_(upload.name);
+    if (!name) return json({ ok: false, error: 'no name' });
+
     var bytes = Utilities.base64Decode(upload.dataBase64);
     var blob = Utilities.newBlob(bytes, mimeType, name);
     var folder = getMediaFolder_(ss);
@@ -217,10 +244,44 @@ function saveMedia_(ss, upload) {
     }
     if (!found) sh.appendRow([name, fileId, mimeType, when]);
 
-    return json({ ok: true, name: name, fileId: fileId, mimeType: mimeType, updatedAt: when });
+    // 新流程:把檔名與 type=image 寫回題目那一列。
+    if (hasQ) {
+      var wb = writeBackMediaInternal_(ss, String(upload.region), String(upload.id), name, 'image');
+      if (!wb.ok) return json({ ok: false, error: '已存檔但寫回試算表失敗:' + wb.error });
+    }
+
+    return json({ ok: true, name: name, type: 'image', fileId: fileId, mimeType: mimeType, updatedAt: when });
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
+}
+
+/** 依「地區(分頁名)+題目id」找到那一列,寫入 media 與 type 兩個儲存格。回 {ok, error}。 */
+function writeBackMediaInternal_(ss, region, id, media, type) {
+  var sh = ss.getSheetByName(region);
+  if (!sh) return { ok: false, error: '找不到地區分頁:' + region };
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return { ok: false, error: '分頁沒有資料:' + region };
+
+  var idx = {};
+  data[0].forEach(function (h, i) { idx[normName_(h)] = i; });
+  if (idx['id'] == null) return { ok: false, error: '分頁缺 id 欄:' + region };
+  if (idx['media'] == null) return { ok: false, error: '分頁缺 media 欄:' + region };
+
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][idx['id']]) === String(id)) {
+      sh.getRange(r + 1, idx['media'] + 1).setValue(media);
+      if (idx['type'] != null && type) sh.getRange(r + 1, idx['type'] + 1).setValue(type);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: '找不到題目 id:' + id + '(地區 ' + region + ')' };
+}
+
+/** setMedia 分支用:寫回後回 json。 */
+function writeBackMedia_(ss, region, id, media, type) {
+  var wb = writeBackMediaInternal_(ss, region, id, media, type);
+  return json(wb.ok ? { ok: true } : { ok: false, error: wb.error });
 }
 
 /** 回傳一張圖的 base64(?media=檔名)。 */

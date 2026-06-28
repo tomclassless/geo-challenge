@@ -59,6 +59,13 @@ export async function loadBanks(): Promise<BanksPayload | null> {
   return ((await db.get('kv', 'banks')) as BanksPayload | undefined) ?? null
 }
 
+/** Overwrite the cached banks without touching the lastSync timestamp
+ *  (used for local edits like setting a question's media). */
+export async function writeBanks(banks: BanksPayload): Promise<void> {
+  const db = await getDB()
+  await db.put('kv', banks, 'banks')
+}
+
 export async function getLastSync(): Promise<string | null> {
   const db = await getDB()
   return ((await db.get('kv', 'lastSync')) as string | undefined) ?? null
