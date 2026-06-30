@@ -58,7 +58,7 @@ const TEMPLATES: Template[] = [
     intro: () => '走進台南，閻羅王翻開生死簿，攔下這隻頑皮的猴子！' },
   { key: '高雄', keywords: ['高雄'], order: 5,
     general: { name: '太上老君', emoji: '☯️', color: '#7048E8' }, specialty: { name: '牛肉麵', emoji: '🍜' },
-    intro: () => '最後一站高雄，太上老君祭出八卦爐，這是逃離掌心的最後關卡！' },
+    intro: () => '來到高雄，太上老君祭出八卦爐，要把大聖煉進爐中！' },
 
   // --- 國家公園（特定，須排在通用「國家公園」之前） ---
   { key: '雪霸', keywords: ['雪霸'], order: 6,
