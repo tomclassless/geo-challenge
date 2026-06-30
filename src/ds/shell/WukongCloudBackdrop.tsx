@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PixelWukong } from '../game/PixelSprites'
 
 /**
@@ -17,6 +18,7 @@ function PxCloud({ scale = 1, color = '#FFFFFF' }: { scale?: number; color?: str
 }
 
 export function WukongCloudBackdrop() {
+  const [caught, setCaught] = useState(false)
   return (
     <>
       {/* sky + drifting clouds — fills the page, behind everything */}
@@ -49,18 +51,31 @@ export function WukongCloudBackdrop() {
         </g>
       </svg>
 
-      {/* the flying 孫悟空 mascot — zig-zags around the page */}
+      {/* the flying 孫悟空 mascot — tap to trap under your hand (五指山); it struggles */}
       <div
-        aria-hidden
+        onPointerDown={(e) => { e.preventDefault(); setCaught((c) => !c) }}
+        title={caught ? '放開孫悟空' : '抓住孫悟空'}
         style={{
           position: 'absolute',
-          zIndex: 2,
-          pointerEvents: 'none',
+          zIndex: 3,
+          pointerEvents: 'auto',
+          cursor: 'pointer',
+          touchAction: 'manipulation',
           animation: 'wkFly 18s ease-in-out infinite',
+          animationPlayState: caught ? 'paused' : 'running',
           filter: 'drop-shadow(0 6px 6px rgba(60,60,90,0.22))'
         }}
       >
-        <PixelWukong size={132} />
+        <div style={{ position: 'relative', animation: caught ? 'wkStruggle .22s linear infinite' : undefined }}>
+          <PixelWukong size={132} />
+          {caught && (
+            <>
+              <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 96, opacity: 0.8, pointerEvents: 'none' }}>🖐️</span>
+              <span style={{ position: 'absolute', top: 0, right: 4, fontSize: 26, pointerEvents: 'none' }}>💢</span>
+              <span style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'rgba(0,0,0,0.65)', color: '#fff', fontWeight: 800, fontSize: 13, padding: '2px 8px', borderRadius: 10, pointerEvents: 'none' }}>放我出去！</span>
+            </>
+          )}
+        </div>
       </div>
     </>
   )

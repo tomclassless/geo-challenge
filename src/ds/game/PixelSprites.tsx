@@ -38,62 +38,65 @@ const WK_PAL: Record<string, string> = {
 const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> = {
   // 海龍王 — dragon king (horns, whiskers, scales)
   '桃園': {
-    pal: { K: '#16384A', B: '#1C7ED6', b: '#1559A0', G: '#3FB6A0', Y: '#F0C24B', W: '#FFFFFF', E: '#0E2733', R: '#E0524D' },
+    pal: { K: '#0E3548', B: '#1C7ED6', b: '#1559A0', G: '#3FB6A0', Y: '#F0C24B', W: '#FFFFFF', E: '#0E2733', R: '#E0524D' },
     grid: [
-      '...Y......Y...',
-      '...Y......Y...',
-      '..KBB....BBK..',
-      '..KBBBBBBBBK..',
-      '..BGBBBBBBGB..',
-      '.KBWEBBBBEWBK.',
-      '.KBBBBBBBBBBK.',
-      'WKBBBRRRRBBBKW',
-      '.KBBBBBBBBBBK.',
-      '..KBBBBBBBBK..',
-      '...BBBBBBBB...',
-      '..BGBBBBBBGB..',
-      '..BBBBBBBBBB..',
-      '...bb....bb...'
+      '..Y..YY..Y......',
+      '..Y.YbbY.Y......',
+      '...YYbbYY.......',
+      '..KBBBBBBK......',
+      '.KBGBBBBGBK.....',
+      '.KBWEBBEWBK.....',
+      '.KBBBBBBBBK.....',
+      'YKBBBBBBBBKY....',
+      '.KBbBBBBbBK.....',
+      '..KBRRRRBK......',
+      '..KWBBBBWK......',
+      '...KBBBBK.......',
+      '..GBBBBBBG......',
+      '...bBBBBb.......'
     ]
   },
-  // 托塔李天王 — carries a pagoda on top
+  // 托塔李天王 — armoured warrior holding a pagoda aloft
   '台北': {
-    pal: { K: '#3A2E10', P: '#EAD9A0', c: '#C99A2E', Y: '#F0C24B', S: '#F0C9A0', E: '#22222A' },
+    pal: { K: '#3A2E10', Y: '#F0C24B', c: '#C99A2E', S: '#F0C9A0', E: '#22222A', W: '#EFE9DC', P: '#EAD9A0', p: '#C9B27E', R: '#C0413B' },
     grid: [
-      '.....PP.......',
-      '....PPPP......',
-      '...PPPPPP.....',
-      '.....cc.......',
-      '....KYYYK.....',
-      '....KSSSK.....',
-      '....KSEEK.....',
-      '....KSSSK.....',
-      '...KYYYYYK....',
-      '..KYYYYYYYK...',
-      '..KYcYYcYYK...',
-      '..KYYYYYYYK...',
-      '...KYYYYYK....',
-      '...YY...YY....'
+      '....KRRK........',
+      '...KYYYYK.......',
+      '...KYYYYK..PPP..',
+      '...KSSSSK..PpP..',
+      '...KSEESK.PPPPP.',
+      '...KSSSSK..PpP..',
+      '...KWWWWK.PPPPP.',
+      '..WWWWWWWW.SS...',
+      '..KYYYYYYKSS....',
+      '.KYYccYYYK......',
+      '.KYYYYYYYK......',
+      '.KYYYYYYYK......',
+      '..KYYYYYYK......',
+      '..KYY..YYK......',
+      '..KK....KK......'
     ]
   },
-  // 哪吒 — child with two buns, red, fire wheels
+  // 哪吒 — child with hair tufts, red robe, riding 風火輪
   '新北': {
-    pal: { K: '#3A2010', D: '#2A2228', S: '#F6C7A0', E: '#22222A', M: '#B23A36', R: '#E0524D', Y: '#F7C948', o: '#F59E2B' },
+    pal: { K: '#3A2010', H: '#6B4A2B', S: '#F6C7A0', E: '#22222A', M: '#B23A36', R: '#E0524D', Y: '#F7C948', o: '#F59E2B', O: '#C0392B', n: '#F7C948', w: '#FFC83D' },
     grid: [
-      '..KK....KK....',
-      '.KDDK..KDDK...',
-      '..KK....KK....',
-      '...KSSSSSSK...',
-      '...KSEESEEK...',
-      '...KSSSSSSK...',
-      '...KSSMMSSK...',
-      '....KKKKKK....',
-      '...RRRRRRRR...',
-      '..RRRYYYYRRR..',
-      '..RRRRRRRRRR..',
-      '...RRRRRRRR...',
-      '...RR....RR...',
-      '..oo......oo..'
+      '...H.....H.....',
+      '..HHH...HHH....',
+      '..HKSSSSSSKH...',
+      '...KSEESEEK....',
+      '...KSSSSSSK....',
+      '...KSSMMSSK....',
+      '....KKKKKK.....',
+      '...RRRRRRRR....',
+      '..RRRYYYYRRR...',
+      '..RRRRRRRRRR...',
+      '...RRRRRRRR....',
+      '...RR....RR....',
+      '..oOOo..oOOo...',
+      '.owOnOw.owOnOw.',
+      '..oOOo..oOOo...',
+      '...w......w....'
     ]
   },
   // 二郎神 — gold third eye, silver armour, 哮天犬 at his side
