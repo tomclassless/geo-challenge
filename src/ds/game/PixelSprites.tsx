@@ -96,62 +96,66 @@ const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> 
       '..oo......oo..'
     ]
   },
-  // 二郎神 — third eye on the forehead, green armour
+  // 二郎神 — gold third eye, silver armour, 哮天犬 at his side
   '台中': {
-    pal: { K: '#1E3A2A', C: '#2F9E44', Y: '#F0C24B', S: '#F0C9A0', E: '#22222A', T: '#FFD23B' },
+    pal: { K: '#2A2A33', k: '#2A2A33', A: '#CBD3DD', Y: '#E8C24B', S: '#F2C79E', E: '#22222A', G: '#FFD23B', p: '#5A4410', R: '#D33B3B', D: '#F2F2F2', d: '#C9CDD2', t: '#8A6A44' },
     grid: [
-      '....KYYYK.....',
-      '...KCCCCCK....',
-      '...KSSTSSK....',
-      '...KSEESEEK...',
-      '...KSSSSSSK...',
-      '...KKSSSSKK...',
-      '....KKKKKK....',
-      '...CCCCCCCC...',
-      '..CCCYYYYCCC..',
-      '..CCCCCCCCCC..',
-      '...CCCCCCCC...',
-      '...CC....CC...'
+      '...KKAAAAKK.......',
+      '...KAYYYYAK.......',
+      '...KAAAAAAK.......',
+      '...KSSSSSSK.......',
+      '...KSSGSSK........',
+      '...KSSpSSK........',
+      '...KSESSESK.......',
+      '...KSSSSSSK.......',
+      '...KKSSSSKK.......',
+      '..KAAAAAAAAK......',
+      '..KARAAAARAK......',
+      '..KAAAAAAAAK.ddt..',
+      '..KAAAAAAAAK.DDDD.',
+      '...KAA.AAK..kDDDD.',
+      '...KK..KK...D.DD..'
     ]
   },
-  // 閻羅王 — tall black hat, long beard
+  // 閻羅王 — winged official hat, fierce red face, black beard
   '台南': {
-    pal: { D: '#2A2730', K: '#15131A', S: '#E8B58C', E: '#111111', W: '#EFE9DC', Y: '#C9A24B' },
+    pal: { K: '#15131A', D: '#262630', R: '#C0413B', r: '#8E2A26', W: '#F0ECE0', E: '#FFE9A8', B: '#1A1A22', Y: '#C9A24B' },
     grid: [
-      '..DDDDDDDDDD..',
-      '..DDDDDDDDDD..',
-      '...DDDDDDDD...',
-      '...KSSSSSSK...',
-      '...KSEESEEK...',
-      '...KSSSSSSK...',
-      '...KWWWWWWK...',
-      '...WWWWWWWW...',
-      '....WWWWWW....',
-      '..DDDDDDDDDD..',
-      '..DDDYYYYDDD..',
-      '..DDDDDDDDDD..',
-      '...DDDDDDDD...',
-      '...DD....DD...'
+      '....DDDDDDDD....',
+      '....DDDDDDDD....',
+      '..DDDDDDDDDDDD..',
+      '.DD..........DD.',
+      '....RRRRRRRR....',
+      '....RWWWWWWR....',
+      '....REEWWEER....',
+      '....RRRRRRRR....',
+      '....RRrrrrRR....',
+      '...BBBBBBBBBB...',
+      '...BBBBBBBBBB...',
+      '....BBBBBBBB....',
+      '..DDDDDDDDDDDD..',
+      '..DDDYYYYDDDD...'
     ]
   },
-  // 太上老君 — sage with topknot, long white beard, purple robe, gourd
+  // 太上老君 — bald domed sage, very long white beard, 太極 robe
   '高雄': {
-    pal: { W: '#EFE9DC', K: '#2A2230', S: '#F0C9A0', E: '#222222', P: '#7048E8', Y: '#E8C24B', g: '#3FA37A' },
+    pal: { K: '#2A2230', S: '#F0C9A0', E: '#222222', W: '#F2EEE6', P: '#2E8B8B', Y: '#E8C24B', o: '#2A2230' },
     grid: [
-      '.....WW.......',
-      '....KWWK......',
-      '...KSSSSSK....',
-      '...KSEESEEK...',
-      '...KSSSSSSK...',
-      '...KWWWWWWK...',
-      '...WWWWWWWW...',
-      '...WWWWWWWW...',
-      '....WWWWWW....',
-      '..PPPWWWWPPP..',
-      '..PPPPPPPPPP..',
-      '..PPPPPPPPYg..',
-      '...PPPPPPPP...',
-      '...PP....PP...'
+      '......WW........',
+      '.....KWWK.......',
+      '....KSSSSSSK....',
+      '....KSSSSSSK....',
+      '....KSEESEEK....',
+      '....KSSSSSSK....',
+      '....KWWWWWWK....',
+      '...WWWWWWWWWW...',
+      '...WWWWWWWWWW...',
+      '....WWWWWWWW....',
+      '.....WWWWWW.....',
+      '..PPPPWWPPPP....',
+      '..PPPYooYPPP....',
+      '..PPPPPPPPPP....',
+      '...PP....PP.....'
     ]
   },
   // 山神 — national-park guardian (green mountain crown + long white beard)
@@ -207,22 +211,24 @@ const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> 
       '...BB....BB...'
     ]
   },
-  // 台灣獼猴 — 壽山 (brown macaque, pink face)
+  // 台灣獼猴 — 壽山 (big ears, pink face, curled tail)
   '壽山': {
-    pal: { B: '#8A6A44', S: '#E8B58C', E: '#2A2A2A', M: '#B23A36' },
+    pal: { B: '#8A6A44', b: '#6E5436', S: '#F0C0A0', E: '#2A2A2A', M: '#9E3A36', t: '#7A5C3C' },
     grid: [
-      '..BBBBBBBBBB..',
-      '.BBBBBBBBBBBB.',
-      '.BBSSSSSSSSBB.',
-      '.BBSEESSEESBB.',
-      '.BBSSSSSSSSBB.',
-      '.BBSSSMMSSSBB.',
-      '..BBSSSSSSBB..',
-      '...BBBBBBBB...',
-      '..BBBBBBBBBB..',
-      '..BBBBBBBBBB..',
-      '...BBBBBBBB...',
-      '...BB....BB...'
+      'BB..........BB..',
+      'BBBB......BBBB..',
+      'BBBBB....BBBBB..',
+      '.BBBBBBBBBBBB...',
+      '.BSSSSSSSSSSB...',
+      '.BSSEEBBEESSB...',
+      '.BSSSSSSSSSSB...',
+      '.BBSSSMMSSSSB...',
+      '..BSSSMMSSSB....',
+      '..BBSSSSSSBB....',
+      '...BBBBBBBB.....',
+      '...BBBBBBBB..tt.',
+      '...BBBBBBBB.tt..',
+      '...BB....BB.t...'
     ]
   },
   // 台灣藍鵲 — 陽明山 (blue bird, black head, red beak, long tail)
@@ -243,35 +249,39 @@ const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> 
       '....RR........'
     ]
   },
-  // 黑面琵鷺 — 台江 (white body, black face + spoon bill)
+  // 黑面琵鷺 — 台江 (white wader, spoon bill, long legs)
   '台江': {
-    pal: { W: '#FFFFFF', D: '#2A2730', e: '#F0C24B', y: '#E8A23B' },
+    pal: { W: '#FFFFFF', D: '#2A2730', e: '#F0C24B', y: '#D98A2B' },
     grid: [
-      '....WWWW......',
-      '...WWWWWW.....',
-      '...DDeWWW.....',
-      'DDDDDWWWW.....',
-      '...DDWWWW.....',
-      '...WWWWWWW....',
-      '..WWWWWWWWW...',
-      '.WWWWWWWWWWW..',
-      '..WWWWWWWWWW..',
-      '...WWWWWWWW...',
-      '....yy..yy....'
+      '................',
+      '.....WWWW.......',
+      '....WWWWWW......',
+      '....DDDeWWW.....',
+      '..DDDDDWWW......',
+      'DDDD..DWWWW.....',
+      '..DD..WWWWW.....',
+      '......WWWWWW....',
+      '.....WWWWWWWW...',
+      '......WWWWWW....',
+      '.......y.y......',
+      '.......y.y......',
+      '.......y.y......',
+      '......yy.yy.....'
     ]
   },
-  // 櫻花鉤吻鮭 — 雪霸 (side-view fish with cherry band)
+  // 櫻花鉤吻鮭 — 雪霸 (fish with a single red lateral stripe + fins)
   '雪霸': {
-    pal: { B: '#6E93A8', b: '#3E5E73', R: '#D96A7A', E: '#10202A' },
+    pal: { B: '#6E93A8', b: '#3E5E73', R: '#D9586A', W: '#FFFFFF', E: '#10202A' },
     grid: [
-      '..............',
-      '....BBBBBB....',
-      '..BBBBBBBBBB..',
-      '.EBBBBRRBBBBb.',
-      '.BBBBBRRBBBBbb',
-      '..BBBBBBBBBB..',
-      '....BBBBBB....',
-      '......bb......'
+      '......bbb.......',
+      '....BBBBBBBB...b',
+      '..BBBBBBBBBBBbbb',
+      '.EBBBBBBBBBBBbb.',
+      '.BRRRRRRRRRRRb..',
+      '.WBBBBBBBBBBBbb.',
+      '..WBBBBBBBBBbbb.',
+      '...WBBBBBBB...b.',
+      '.....bbb........'
     ]
   }
 }
@@ -393,19 +403,18 @@ export function PixelWukong({ size = 140, idle = false, sleeping = false }: { si
 
 export function PixelGeneral({ meta, size = 140, idle = false, hit = false }: { meta: CityMeta; size?: number; idle?: boolean; hit?: boolean }) {
   const def = GENERALS[meta.short]
+  const grid = def?.grid ?? GEN_FALLBACK
+  const pal = def?.pal ?? { C: meta.general.color, K: '#2E2A33', S: '#F0C9A0', E: '#2A2A2A', D: '#6B6660' }
+  // square, centred viewBox so any grid size renders crisp and fits a square slot
+  const cols = grid.reduce((m, r) => Math.max(m, r.length), 0)
+  const rows = grid.length
+  const n = Math.max(cols, rows)
+  const offX = ((n - cols) / 2) * U
+  const offY = ((n - rows) / 2) * U
   return (
-    <svg viewBox="-7 -7 112 112" width={size} style={{ display: 'block', imageRendering: 'pixelated' }} aria-hidden>
+    <svg viewBox={`${-U} ${-U} ${(n + 2) * U} ${(n + 2) * U}`} width={size} style={{ display: 'block', imageRendering: 'pixelated' }} aria-hidden>
       <g style={hit ? { animation: 'rpgHitBig .5s ease' } : idle ? { animation: 'rpgFloat 3.2s ease-in-out infinite' } : undefined}>
-        {def ? (
-          renderGrid(def.grid, def.pal)
-        ) : (
-          <>
-            <g shapeRendering="crispEdges">
-              <rect x={0.4 * U} y={-2 * U} width={0.8 * U} height={15 * U} fill="#9AA0A6" />
-            </g>
-            {renderGrid(GEN_FALLBACK, { C: meta.general.color, K: '#2E2A33', S: '#F0C9A0', E: '#2A2A2A', D: '#6B6660' })}
-          </>
-        )}
+        <g transform={`translate(${offX} ${offY})`}>{renderGrid(grid, pal)}</g>
       </g>
     </svg>
   )

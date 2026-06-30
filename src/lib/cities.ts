@@ -51,7 +51,7 @@ const TEMPLATES: Template[] = [
     general: { name: '哪吒', emoji: '🔥', color: '#E8590C' }, specialty: { name: '金牛角', emoji: '🥐' },
     intro: () => '來到新北，三太子哪吒踩著風火輪殺了過來！' },
   { key: '台中', keywords: ['台中', '臺中'], order: 3,
-    general: { name: '二郎神', emoji: '👁️', color: '#2F9E44' }, specialty: { name: '太陽餅', emoji: '🥮' },
+    general: { name: '二郎神', emoji: '👁️', color: '#3E6FA8' }, specialty: { name: '太陽餅', emoji: '🥮' },
     intro: () => '抵達台中，二郎神睜開天眼，要看穿大聖的七十二變！' },
   { key: '台南', keywords: ['台南', '臺南'], order: 4,
     general: { name: '閻羅王', emoji: '⚖️', color: '#495057' }, specialty: { name: '棺材板', emoji: '🍞' },
