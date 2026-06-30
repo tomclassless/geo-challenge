@@ -59,10 +59,29 @@ const TEMPLATES: Template[] = [
   { key: '高雄', keywords: ['高雄'], order: 5,
     general: { name: '太上老君', emoji: '☯️', color: '#7048E8' }, specialty: { name: '牛肉麵', emoji: '🍜' },
     intro: () => '最後一站高雄，太上老君祭出八卦爐，這是逃離掌心的最後關卡！' },
-  { key: '國家公園', keywords: ['國家公園'], order: 6,
+
+  // --- 國家公園（特定，須排在通用「國家公園」之前） ---
+  { key: '雪霸', keywords: ['雪霸'], order: 6,
+    general: { name: '櫻花鉤吻鮭', emoji: '🐟', color: '#3E7E9E' }, specialty: { name: '高山烏龍茶', emoji: '🍵' },
+    intro: (r) => `孫悟空闖進 ${r}，國寶魚櫻花鉤吻鮭翻起清冽溪水阻擋去路！` },
+  { key: '陽明山', keywords: ['陽明山'], order: 7,
+    general: { name: '台灣藍鵲', emoji: '🐦', color: '#2456C6' }, specialty: { name: '箭筍', emoji: '🎋' },
+    intro: (r) => `來到 ${r}，台灣藍鵲振翅長鳴，要把大聖趕出火山林！` },
+  { key: '玉山', keywords: ['玉山'], order: 8,
+    general: { name: '台灣黑熊', emoji: '🐻', color: '#4B4B55' }, specialty: { name: '青梅', emoji: '🍈' },
+    intro: (r) => `登上 ${r}，台灣黑熊張開胸前白月牙，擋在最高峰前！` },
+  { key: '台江', keywords: ['台江'], order: 9,
+    general: { name: '黑面琵鷺', emoji: '🦢', color: '#3E8E9C' }, specialty: { name: '虱目魚', emoji: '🐟' },
+    intro: (r) => `飛入 ${r}，越冬的黑面琵鷺成群擋住濕地！` },
+  { key: '壽山', keywords: ['壽山'], order: 10,
+    general: { name: '台灣獼猴', emoji: '🐒', color: '#8A6A44' }, specialty: { name: '桶仔雞', emoji: '🍗' },
+    intro: (r) => `攀上 ${r}，成群台灣獼猴張牙舞爪向大聖討食！` },
+
+  // --- 通用分類（未指定的公園/森林落在這裡） ---
+  { key: '國家公園', keywords: ['國家公園'], order: 11,
     general: { name: '山神', emoji: '⛰️', color: '#2F8F6B' }, specialty: { name: '神木毬果', emoji: '🌰' },
     intro: (r) => `孫悟空闖進 ${r}，鎮守山林的山神現身阻擋！` },
-  { key: '國家森林', keywords: ['國家森林', '森林'], order: 7,
+  { key: '國家森林', keywords: ['國家森林', '森林'], order: 12,
     general: { name: '樹精', emoji: '🌳', color: '#2F9E44' }, specialty: { name: '山林野莓', emoji: '🫐' },
     intro: (r) => `深入 ${r}，千年樹精伸出枝枒，要把大聖困在林中！` }
 ]

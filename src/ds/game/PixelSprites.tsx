@@ -187,6 +187,92 @@ const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> 
       '...bbbbbbbb...',
       '...bb....bb...'
     ]
+  },
+  // 台灣黑熊 — 玉山 (black bear, white chest V)
+  '玉山': {
+    pal: { B: '#2A2730', S: '#C9A07A', W: '#FFFFFF' },
+    grid: [
+      '..BB......BB..',
+      '.BBBB....BBBB.',
+      '..BBBBBBBBBB..',
+      '.BBBBBBBBBBBB.',
+      '.BBWBBBBBBWBB.',
+      '.BBBBBBBBBBBB.',
+      '.BBBBSSSSBBBB.',
+      '..BBSSSSSSBB..',
+      '...BBBBBBBB...',
+      '..BBWWWWWWBB..',
+      '..BBBWWWWBBB..',
+      '..BBBBBBBBBB..',
+      '...BB....BB...'
+    ]
+  },
+  // 台灣獼猴 — 壽山 (brown macaque, pink face)
+  '壽山': {
+    pal: { B: '#8A6A44', S: '#E8B58C', E: '#2A2A2A', M: '#B23A36' },
+    grid: [
+      '..BBBBBBBBBB..',
+      '.BBBBBBBBBBBB.',
+      '.BBSSSSSSSSBB.',
+      '.BBSEESSEESBB.',
+      '.BBSSSSSSSSBB.',
+      '.BBSSSMMSSSBB.',
+      '..BBSSSSSSBB..',
+      '...BBBBBBBB...',
+      '..BBBBBBBBBB..',
+      '..BBBBBBBBBB..',
+      '...BBBBBBBB...',
+      '...BB....BB...'
+    ]
+  },
+  // 台灣藍鵲 — 陽明山 (blue bird, black head, red beak, long tail)
+  '陽明山': {
+    pal: { D: '#1B1B22', B: '#2456C6', R: '#E0524D', W: '#FFFFFF' },
+    grid: [
+      '....DDDD......',
+      '...DDDDDD.....',
+      '...DDWDDD.....',
+      '...DDDDDDR....',
+      '...DDDDDD.....',
+      '..BBBBBBBB....',
+      '.BBBBBBBBBB...',
+      '.BBWWWWBBBB...',
+      '.BBBBBBBBBBB..',
+      '..BBBBBBBBBBB.',
+      '...BBBBBBBBBBB',
+      '....RR........'
+    ]
+  },
+  // 黑面琵鷺 — 台江 (white body, black face + spoon bill)
+  '台江': {
+    pal: { W: '#FFFFFF', D: '#2A2730', e: '#F0C24B', y: '#E8A23B' },
+    grid: [
+      '....WWWW......',
+      '...WWWWWW.....',
+      '...DDeWWW.....',
+      'DDDDDWWWW.....',
+      '...DDWWWW.....',
+      '...WWWWWWW....',
+      '..WWWWWWWWW...',
+      '.WWWWWWWWWWW..',
+      '..WWWWWWWWWW..',
+      '...WWWWWWWW...',
+      '....yy..yy....'
+    ]
+  },
+  // 櫻花鉤吻鮭 — 雪霸 (side-view fish with cherry band)
+  '雪霸': {
+    pal: { B: '#6E93A8', b: '#3E5E73', R: '#D96A7A', E: '#10202A' },
+    grid: [
+      '..............',
+      '....BBBBBB....',
+      '..BBBBBBBBBB..',
+      '.EBBBBRRBBBBb.',
+      '.BBBBBRRBBBBbb',
+      '..BBBBBBBBBB..',
+      '....BBBBBB....',
+      '......bb......'
+    ]
   }
 }
 
