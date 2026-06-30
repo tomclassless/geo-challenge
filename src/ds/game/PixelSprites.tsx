@@ -153,6 +153,40 @@ const GENERALS: Record<string, { grid: string[]; pal: Record<string, string> }> 
       '...PPPPPPPP...',
       '...PP....PP...'
     ]
+  },
+  // 山神 — national-park guardian (green mountain crown + long white beard)
+  '國家公園': {
+    pal: { K: '#2A3A2E', M: '#4E7A4E', S: '#F0C9A0', E: '#22222A', W: '#EFE9DC' },
+    grid: [
+      '......KK......',
+      '....KKMMKK....',
+      '...KMMMMMMK...',
+      '...KSSSSSSK...',
+      '...KSEESEEK...',
+      '...KSSSSSSK...',
+      '...WWWWWWWW...',
+      '...WWWWWWWW...',
+      '....WWWWWW....',
+      '..MMMMMMMMMM..',
+      '..MMMMMMMMMM..',
+      '...MMMMMMMM...',
+      '...MM....MM...'
+    ]
+  },
+  // 樹精 — national-forest guardian (leafy canopy head + bark trunk)
+  '國家森林': {
+    pal: { K: '#3A2A1E', G: '#2F9E44', b: '#6B4A2B', E: '#13371B' },
+    grid: [
+      '..GGGGGGGGGG..',
+      '.GGGGGGGGGGGG.',
+      '..GGEGGGGEGG..',
+      '..GGGGGGGGGG..',
+      '...bbbbbbbb...',
+      '...bKbbbbKb...',
+      '...bbbbbbbb...',
+      '...bbbbbbbb...',
+      '...bb....bb...'
+    ]
   }
 }
 

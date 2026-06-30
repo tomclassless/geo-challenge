@@ -60,10 +60,10 @@ export function HomeScreen() {
           <Card tone="plain" pad="lg" style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'center' }}>
             <h2 style={{ margin: 0, fontWeight: 900, fontSize: 'var(--fs-h2)' }}>還沒有題庫</h2>
             <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              請先設定後端網址再「立即同步」下載六都題庫；或先載入範例題庫試玩整個冒險。
+              請先設定後端網址再「立即同步」下載題庫；或先載入範例題庫試玩整個冒險。
             </p>
             <Button variant="primary" size="lg" block onClick={() => setShowSettings(true)}>設定後端網址</Button>
-            <Button variant="secondary" size="lg" block onClick={() => void loadSample()}>🧪 載入範例題庫（六都）試玩</Button>
+            <Button variant="secondary" size="lg" block onClick={() => void loadSample()}>🧪 載入範例題庫（六都＋國家公園/森林）試玩</Button>
           </Card>
         </div>
       ) : (
@@ -76,13 +76,13 @@ export function HomeScreen() {
                 {WUKONG_EMOJI} 孫悟空逃離如來佛祖掌心 {BUDDHA_EMOJI}
               </h1>
               <p style={{ margin: '8px 0 0', color: 'var(--text-muted)' }}>
-                從桃園出發，繞台灣六都一圈，吃掉足夠特產才能逃出掌心！
+                從六都和國家公園的天兵中逃生，吃掉足夠特產才能脫困！
               </p>
             </div>
 
             {/* choose a city to challenge */}
             <Card tone="plain" pad="md" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>選擇要挑戰的城市（一場玩一都）</span>
+              <span style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>選擇要挑戰的主題（一場玩一個；可在試算表新增主題）</span>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {cities.map((c, i) => {
                   const on = selCity === i

@@ -6,7 +6,7 @@ import type {
 import { makePlayable, shuffle } from '../lib/shuffle'
 import { fetchBanks, fetchMedia, pushResults, pushRoster } from '../lib/sheetsApi'
 import { SAMPLE_BANKS } from '../lib/sampleData'
-import { CITIES, findCity, type CityMeta } from '../lib/cities'
+import { themesFromRegions, type CityMeta } from '../lib/cities'
 import { adoptApiFromUrl } from '../lib/config'
 import { base64ToBlob, isBareFilename, normalizeMediaKey } from '../lib/media'
 import {
@@ -152,15 +152,15 @@ function commitCampaign(
   set({ campaign: { ...campaign }, campaigns: upsertCampaign(get().campaigns, campaign), ...extra })
 }
 
-/** Cities that have a matching question bank, in play order. */
+/** Every question-bank tab becomes a playable theme (六都、國家公園、國家森林…). */
 function getPlayableCities(regions: Region[]): CityMeta[] {
-  return CITIES
-    .filter((c) => regions.some((r) => findCity(r.name)?.region === c.region))
-    .sort((a, b) => a.order - b.order)
+  return themesFromRegions(
+    regions.filter((r) => r.questions && r.questions.length > 0).map((r) => r.name)
+  )
 }
 
 function bankRegionFor(regions: Region[], meta: CityMeta): Region | undefined {
-  return regions.find((r) => findCity(r.name)?.region === meta.region)
+  return regions.find((r) => r.name === meta.region)
 }
 
 /** Resolve the city currently being played: its meta + its question bank. */
