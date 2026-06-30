@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Users, Flag, Sword, Image as ImageIcon } from 'lucide-react'
+import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Users, Flag, Sword, Image as ImageIcon, Share2 } from 'lucide-react'
 import { useGame, selectPlayableCities, selectClearedThemes } from '../state/gameStore'
 import type { CampaignState } from '../lib/types'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
@@ -7,6 +7,7 @@ import { WukongCloudBackdrop } from '../ds/shell/WukongCloudBackdrop'
 import { WUKONG_EMOJI, BUDDHA_EMOJI } from '../lib/cities'
 import { SaveRow } from '../components/SaveRow'
 import { SettingsModal } from './SettingsModal'
+import { ShareModal } from './ShareModal'
 import { MediaManagerModal } from './MediaManagerModal'
 
 /** 老師操作頁 — the hub shown before a game and after every round ends. */
@@ -20,6 +21,7 @@ export function HomeScreen() {
   const finishCity = useGame((s) => s.finishCity)
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [showMedia, setShowMedia] = useState(false)
   const [message, setMessage] = useState('')
   const [selCity, setSelCity] = useState(0)
@@ -51,6 +53,7 @@ export function HomeScreen() {
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 32px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.86)', backdropFilter: 'blur(4px)' }}>
         <Logo />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Button variant="ghost" iconLeft={<Share2 size={20} />} onClick={() => setShowShare(true)}>分享此遊戲</Button>
           <Button variant="ghost" iconLeft={<BarChart3 size={20} />} onClick={goReport}>老師報表</Button>
           <Button variant="ghost" iconLeft={<Clock size={20} />} onClick={goHistory}>歷史</Button>
           <IconButton variant="soft" icon={<Settings size={22} />} label="設定" onClick={() => setShowSettings(true)} />
@@ -200,6 +203,7 @@ export function HomeScreen() {
       )}
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showShare && <ShareModal onClose={() => setShowShare(false)} />}
       {showMedia && <MediaManagerModal onClose={() => setShowMedia(false)} />}
     </div>
   )
