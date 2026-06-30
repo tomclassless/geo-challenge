@@ -5,7 +5,7 @@ import { WUKONG_EMOJI } from '../lib/cities'
 
 /** Single-city victory — Wukong collected enough specialties to escape this 天兵. */
 export function CityClearedScreen() {
-  const { goTeacher } = useGame()
+  const { finishCity } = useGame()
   const active = useGame(selectActiveCity)
   if (!active) return null
   const { meta, target } = active
@@ -24,7 +24,7 @@ export function CityClearedScreen() {
         孫悟空蒐集滿 {target} 個 {meta.specialty.emoji}{meta.specialty.name}，掙脫了 {meta.general.name}，逃出 {meta.region}！
       </h1>
 
-      <Button variant="primary" size="xl" iconLeft={<Home size={26} />} onClick={goTeacher}>
+      <Button variant="primary" size="xl" iconLeft={<Home size={26} />} onClick={finishCity}>
         完成，回老師頁
       </Button>
     </div>

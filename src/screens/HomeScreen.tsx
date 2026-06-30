@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BarChart3, Settings, Wifi, Clock, Upload, RefreshCw, Users, Flag, Sword, Image as ImageIcon } from 'lucide-react'
-import { useGame, selectPlayableCities } from '../state/gameStore'
+import { useGame, selectPlayableCities, selectClearedThemes } from '../state/gameStore'
 import type { CampaignState } from '../lib/types'
 import { Button, IconButton, Card, Badge, Stat, Logo } from '../ds'
 import { WukongCloudBackdrop } from '../ds/shell/WukongCloudBackdrop'
@@ -16,6 +16,8 @@ export function HomeScreen() {
     sync, loadSample, startCampaign, continueCampaign, deleteSave, viewSaveReport, goReport, goHistory, goRoster
   } = useGame()
   const cities = useGame(selectPlayableCities)
+  const cleared = useGame(selectClearedThemes)
+  const finishCity = useGame((s) => s.finishCity)
 
   const [showSettings, setShowSettings] = useState(false)
   const [showMedia, setShowMedia] = useState(false)
@@ -78,6 +80,14 @@ export function HomeScreen() {
               <p style={{ margin: '8px 0 0', color: 'var(--text-muted)' }}>
                 從六都和國家公園的天兵中逃生，吃掉足夠特產才能脫困！
               </p>
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', color: cleared.allDone ? 'var(--correct)' : 'var(--text-muted)' }}>
+                  通關進度 {cleared.cleared}/{cleared.total}
+                </span>
+                {cleared.allDone && (
+                  <Button variant="accent" onClick={finishCity}>🏆 看全通關慶祝</Button>
+                )}
+              </div>
             </div>
 
             {/* choose a city to challenge */}

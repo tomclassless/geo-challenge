@@ -99,6 +99,8 @@ interface GameState {
   advanceCity: () => void
   togglePause: () => void
   quitToTeacher: () => void
+  /** After clearing a city: celebrate (gameWon) if every theme is now cleared, else teacher. */
+  finishCity: () => void
 
   goTeacher: () => void
   goHome: () => void
@@ -567,6 +569,15 @@ export const useGame = create<GameState>((set, get) => ({
    *  already auto-saved per answer). */
   quitToTeacher: () => set({ phase: 'teacher', paused: false, currentPlayer: null }),
 
+  finishCity: () => {
+    const { regions, campaigns } = get()
+    const themes = getPlayableCities(regions)
+    const cleared = new Set<string>()
+    for (const c of campaigns) for (const r in c.cities) if (c.cities[r]?.cleared) cleared.add(r)
+    const allDone = themes.length > 0 && themes.every((t) => cleared.has(t.region))
+    set({ phase: allDone ? 'gameWon' : 'teacher', paused: false, currentPlayer: null })
+  },
+
   goTeacher: () => set({ phase: 'teacher' }),
   goHome: () => set({ phase: 'teacher' }),
   goRoster: () => set({ phase: 'roster' }),
@@ -666,4 +677,20 @@ export function selectActiveCity(s: GameState): ActiveCityView | null {
 /** Ordered list of cities that have a question bank (for the map / save view). */
 export function selectPlayableCities(s: GameState): CityMeta[] {
   return getPlayableCities(s.regions)
+}
+
+export interface ClearedView {
+  total: number
+  cleared: number
+  allDone: boolean
+  clearedRegions: Set<string>
+}
+
+/** Across all saves, which themes have ever been cleared, and is everything done? */
+export function selectClearedThemes(s: GameState): ClearedView {
+  const themes = getPlayableCities(s.regions)
+  const clearedRegions = new Set<string>()
+  for (const c of s.campaigns) for (const r in c.cities) if (c.cities[r]?.cleared) clearedRegions.add(r)
+  const cleared = themes.filter((t) => clearedRegions.has(t.region)).length
+  return { total: themes.length, cleared, allDone: themes.length > 0 && cleared === themes.length, clearedRegions }
 }
